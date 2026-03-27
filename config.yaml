@@ -1,0 +1,31 @@
+project:
+  name: citesage
+  version: "0.1.0"
+
+models:
+  generator: "claude-sonnet-4-20250514"
+  grader: "claude-haiku-4-5-20251001"
+  embedder: "all-MiniLM-L6-v2"
+  reranker: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+chunking:
+  default:
+    size: 600
+    overlap: 100
+    strategy: "recursive"
+
+retrieval:
+  vector_top_k: 20
+  bm25_top_k: 20
+  rerank_top_k: 5
+  rrf_k: 60
+  confidence_threshold: 0.7
+
+prompts:
+  version: "v1"
+  path: "src/citesage/prompts"
+
+paths:
+  chroma_db: "data/chroma"
+  bm25_index: "data/bm25_index.pkl"
+  documents: "data/documents"

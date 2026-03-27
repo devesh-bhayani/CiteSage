@@ -1,0 +1,18 @@
+name: rag-reviewer
+description: Reviews RAG code for anti-patterns
+tools:
+  - Read
+  - Grep
+  - Glob
+---
+CRITICAL (blocks merge):
+- Hardcoded prompt strings (must use YAML)
+- Character-based chunking (must use tiktoken)
+- LLM calls without retry/backoff
+- Missing error handling (timeout, 429, empty)
+- Hardcoded model names (must use config.yaml)
+
+WARNING:
+- Missing type hints or structured logging
+- Missing cost tracking on LLM calls
+- Tests without VCR for LLM mocking

@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+data/chroma/
+data/*.pkl
+.env
+*.log
+dist/
+build/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+tests/fixtures/cassettes/

@@ -1,0 +1,10 @@
+__pycache__/
+.venv/
+data/chroma/
+data/*.pkl
+*.pyc
+.git/
+dist/
+build/
+*.log
+tests/fixtures/cassettes/
