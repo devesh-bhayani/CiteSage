@@ -17,9 +17,20 @@ chunking:
 retrieval:
   vector_top_k: 20
   bm25_top_k: 20
+  # How many RRF-fused candidates to feed into the cross-encoder.
+  rerank_candidates: 15
+  # Final number of results returned to the generation layer.
   rerank_top_k: 5
   rrf_k: 60
+  # Threshold for raw cosine similarity from the vector store (all-MiniLM-L6-v2
+  # scores rarely exceed 0.55 for relevant passages; 0.3 is a good floor).
+  vector_score_threshold: 0.3
+  # Threshold applied to the cross-encoder reranker score (Phase 2+).
   confidence_threshold: 0.7
+  # Cross-encoder scores below this are treated as clearly irrelevant; the
+  # pipeline declines without an LLM grading call.
+  # ms-marco scores for unrelated content cluster around -10 to -12.
+  decline_threshold: -5.0
 
 prompts:
   version: "v1"
@@ -29,3 +40,11 @@ paths:
   chroma_db: "data/chroma"
   bm25_index: "data/bm25_index.pkl"
   documents: "data/documents"
+
+pricing:
+  claude-sonnet-4-20250514:
+    input_per_million: 3.0
+    output_per_million: 15.0
+  claude-haiku-4-5-20251001:
+    input_per_million: 0.25
+    output_per_million: 1.25
