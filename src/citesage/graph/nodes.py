@@ -27,14 +27,16 @@ Routing functions (return str, used as conditional edge targets):
 from __future__ import annotations
 
 import json
+import re
 import time
 
 import structlog
 from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
+from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from ..config import get_settings
+from ..utils.llm_factory import get_generator_llm, get_grader_llm
 from ..generation.citation_verifier import CitationVerifier
 from ..ingestion.models import Chunk
 from ..prompts import load_prompt
@@ -52,18 +54,16 @@ logger = structlog.get_logger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _haiku() -> ChatAnthropic:
-    settings = get_settings()
-    return ChatAnthropic(model=settings.models.grader, max_tokens=512)
+def _haiku() -> BaseChatModel:
+    return get_grader_llm(max_tokens=512)
 
 
-def _sonnet() -> ChatAnthropic:
-    settings = get_settings()
-    return ChatAnthropic(model=settings.models.generator, max_tokens=1024)
+def _sonnet() -> BaseChatModel:
+    return get_generator_llm(max_tokens=1024)
 
 
 def _llm_invoke_with_retry(
-    llm: ChatAnthropic,
+    llm: BaseChatModel,
     messages: list,
     max_attempts: int = 3,
     base_delay: float = 1.0,
@@ -254,21 +254,81 @@ def generate_fast_node(state: RAGState) -> dict:
     text, usage = _llm_invoke_with_retry(llm, messages)
     logger.info("graph.generate_fast", sources=len(above), token_usage=usage)
 
+    # Verify citations even on the fast path — skipping verification was
+    # the primary cause of near-zero citation_precision on fast-path queries.
+    verifier = CitationVerifier()
+    vresult = verifier.verify(text, above)
+    logger.info(
+        "graph.generate_fast.verify",
+        total=vresult.total_cited,
+        supported=vresult.supported_count,
+        confidence=vresult.confidence,
+    )
+
+    accumulated_usage = _merge_usage(state.get("token_usage", {}), usage)
+    accumulated_model = _merge_model_usage(
+        state.get("model_usage", {}), model_name, usage
+    )
+    if vresult.token_usage:
+        grader_name = settings.models.grader
+        accumulated_usage = _merge_usage(accumulated_usage, vresult.token_usage)
+        accumulated_model = _merge_model_usage(
+            accumulated_model, grader_name, vresult.token_usage
+        )
+
     return {
         "answer": text,
         "citations": above,
-        "confidence": "high",
+        "confidence": vresult.confidence,
         "path_taken": "fast",
-        "token_usage": _merge_usage(state.get("token_usage", {}), usage),
-        "model_usage": _merge_model_usage(
-            state.get("model_usage", {}), model_name, usage
-        ),
+        "token_usage": accumulated_usage,
+        "model_usage": accumulated_model,
     }
 
 
 # ---------------------------------------------------------------------------
 # Node: grade_relevance  (THOROUGH PATH)
 # ---------------------------------------------------------------------------
+
+
+_GRADE_ARRAY_RE = re.compile(r"\[[^\[\]]*\]")
+
+
+def _parse_grade_indices(text: str, *, total: int) -> list[int]:
+    """Parse the grader's JSON array response into 1-based chunk indices.
+
+    Tries strict JSON first, then falls back to extracting the first JSON-array
+    substring (handles models that wrap responses in prose or markdown fences).
+    If both fail, returns []: route_after_grade will then decline the query
+    rather than answer from an unfiltered set — this is the safe choice for
+    unanswerable questions where the grader is the last defense.
+    """
+    stripped = text.strip()
+    candidates: list[str] = []
+    if stripped:
+        candidates.append(stripped)
+    match = _GRADE_ARRAY_RE.search(text)
+    if match and match.group(0) not in candidates:
+        candidates.append(match.group(0))
+
+    for candidate in candidates:
+        try:
+            raw = json.loads(candidate)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(raw, list):
+            return [
+                int(x)
+                for x in raw
+                if isinstance(x, (int, float)) and 1 <= int(x) <= total
+            ]
+
+    logger.warning(
+        "graph.grade_relevance.parse_failed",
+        raw_response=text[:200],
+        total_chunks=total,
+    )
+    return []
 
 
 def grade_relevance_node(state: RAGState) -> dict:
@@ -293,14 +353,7 @@ def grade_relevance_node(state: RAGState) -> dict:
     text, usage = _llm_invoke_with_retry(llm, messages)
     logger.info("graph.grade_relevance", raw_response=text[:120])
 
-    relevant_indices: list[int] = []
-    try:
-        raw = json.loads(text.strip())
-        if isinstance(raw, list):
-            relevant_indices = [int(x) for x in raw if isinstance(x, (int, float))]
-    except (json.JSONDecodeError, ValueError):
-        # Fallback: keep all chunks rather than silently dropping them.
-        relevant_indices = list(range(1, len(chunks) + 1))
+    relevant_indices = _parse_grade_indices(text, total=len(chunks))
 
     # Convert 1-based indices to filtered list.
     kept = [chunks[i - 1] for i in relevant_indices if 1 <= i <= len(chunks)]

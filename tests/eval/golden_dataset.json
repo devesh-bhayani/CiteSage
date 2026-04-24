@@ -1,0 +1,532 @@
+[
+  {
+    "id": "eval_001",
+    "question": "Who introduced the Transformer architecture and when?",
+    "expected_answer": "Vaswani et al. introduced the Transformer architecture in 2017 in their paper 'Attention Is All You Need.'",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_002",
+    "question": "What is the self-attention formula in Transformers?",
+    "expected_answer": "The self-attention formula is: Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) * V",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_003",
+    "question": "Why is the scaling factor 1/sqrt(d_k) used in attention?",
+    "expected_answer": "The scaling factor 1/sqrt(d_k) prevents the dot products from growing too large in high-dimensional spaces, which would push the softmax into regions with very small gradients.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_004",
+    "question": "What are the three components produced by linear projections in self-attention?",
+    "expected_answer": "The three learned linear projections produce queries (Q), keys (K), and values (V).",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "exact_term",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_005",
+    "question": "Explain what query and key vectors represent in self-attention.",
+    "expected_answer": "Each token produces its own query vector, representing what it is 'looking for,' and a key vector, representing what information it 'offers' to other tokens.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_006",
+    "question": "What is multi-head attention?",
+    "expected_answer": "Multi-head attention runs several attention operations in parallel over learned linear projections of the queries, keys, and values. With h heads and model dimension d_model, each head operates in a subspace of dimension d_k = d_v = d_model / h.",
+    "expected_source_chunks": ["220b4908c37209a845952a33d9239579a6a7591dda7ba43f18552a7858b396a4"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_007",
+    "question": "What is the multi-head attention output formula?",
+    "expected_answer": "MultiHead(Q, K, V) = Concat(head_1, ..., head_h) * W_O, where head_i = Attention(Q * W_Q_i, K * W_K_i, V * W_V_i)",
+    "expected_source_chunks": ["220b4908c37209a845952a33d9239579a6a7591dda7ba43f18552a7858b396a4"],
+    "category": "factual_lookup",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_008",
+    "question": "What advantage does multi-head attention provide over single-head attention?",
+    "expected_answer": "Multiple heads allow the model to attend to several distinct patterns simultaneously. A single attention head is limited to attending to a weighted average, while multiple heads enable the model to jointly attend to information from different representation subspaces at different positions.",
+    "expected_source_chunks": ["220b4908c37209a845952a33d9239579a6a7591dda7ba43f18552a7858b396a4"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_009",
+    "question": "Why does the Transformer need positional encoding?",
+    "expected_answer": "Because the Transformer has no recurrence or convolution, it has no inherent notion of token order. Positional encoding is added to the input embeddings before the first layer to inject sequence position information.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_010",
+    "question": "What are the original positional encoding formulas?",
+    "expected_answer": "PE(pos, 2i) = sin(pos / 10000^(2i / d_model)) and PE(pos, 2i+1) = cos(pos / 10000^(2i / d_model))",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "exact_term",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_011",
+    "question": "How many sublayers does an encoder layer have?",
+    "expected_answer": "Each encoder layer has two sublayers: multi-head self-attention and a feed-forward network (FFN).",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_012",
+    "question": "What design pattern wraps the sublayers in encoder layers?",
+    "expected_answer": "Both sublayers are wrapped in a residual connection followed by layer normalisation: output = LayerNorm(x + Sublayer(x))",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_013",
+    "question": "How many sublayers does a decoder layer have and what are they?",
+    "expected_answer": "A decoder layer has three sublayers: masked self-attention (which enforces causal masking), cross-attention (attending over the full encoder output), and a feed-forward network.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_014",
+    "question": "What is the purpose of masked self-attention in the decoder?",
+    "expected_answer": "Masked self-attention (causal masking) ensures that the decoder can only attend to previous positions, enforcing autoregressive generation.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_015",
+    "question": "What is the feed-forward network formula in Transformers?",
+    "expected_answer": "FFN(x) = max(0, x * W_1 + b_1) * W_2 + b_2",
+    "expected_source_chunks": ["39d3dad1620d0f3e510bc59e7eb396062b7c6e8336cab1c62027c6802db8a56a"],
+    "category": "exact_term",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_016",
+    "question": "What activation functions are used in feed-forward networks?",
+    "expected_answer": "The original paper used ReLU; modern models typically use GELU or SwiGLU.",
+    "expected_source_chunks": ["39d3dad1620d0f3e510bc59e7eb396062b7c6e8336cab1c62027c6802db8a56a"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_017",
+    "question": "What is the typical inner dimension of the FFN relative to the model dimension?",
+    "expected_answer": "The inner dimension is usually 4x the model dimension (e.g., d_ff = 4 * d_model = 2048 for a 512-dimensional model).",
+    "expected_source_chunks": ["39d3dad1620d0f3e510bc59e7eb396062b7c6e8336cab1c62027c6802db8a56a"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_018",
+    "question": "What is the difference between encoder-only and decoder-only models?",
+    "expected_answer": "Encoder-only models (e.g., BERT) use only the encoder stack with bidirectional attention and are best suited for understanding tasks. Decoder-only models (e.g., GPT, Claude) use only the decoder stack with causal masking and are naturally suited for generation.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_019",
+    "question": "What are examples of encoder-only models?",
+    "expected_answer": "Examples of encoder-only models include BERT and RoBERTa.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "exact_term",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_020",
+    "question": "What are examples of decoder-only models?",
+    "expected_answer": "Examples of decoder-only models include GPT, LLaMA, and Claude.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "exact_term",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_021",
+    "question": "What are examples of encoder-decoder models and what are they best suited for?",
+    "expected_answer": "Encoder-decoder models like T5 and BART retain the original design and excel at tasks that require mapping one sequence to another, such as summarization and translation.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_022",
+    "question": "What are neural scaling laws?",
+    "expected_answer": "Neural scaling laws, established by Kaplan et al. (2020), show that model performance on language modelling improves predictably as a power law with increases in model size, dataset size, and compute budget.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_023",
+    "question": "What is the key finding of the Chinchilla paper regarding compute-optimal training?",
+    "expected_answer": "The Chinchilla paper by Hoffmann et al. (2022) found that for a given compute budget, compute-optimal training allocates roughly equal resources to model size and data tokens. The Chinchilla-optimal recipe is approximately 20 tokens of training data per model parameter.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_024",
+    "question": "What typical range does the model dimension d_model have?",
+    "expected_answer": "The typical range for d_model is 512 to 12,288.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "exact_term",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_025",
+    "question": "What typical range does the number of attention heads have?",
+    "expected_answer": "The typical range for n_heads is 8 to 96.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "exact_term",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_026",
+    "question": "Compare RNNs and Transformers in terms of processing sequences.",
+    "expected_answer": "RNNs process tokens one at a time sequentially, while Transformers process all tokens in a sequence simultaneously, which enables much more efficient training on modern hardware.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_027",
+    "question": "Why do Transformers avoid vanishing gradient problems?",
+    "expected_answer": "The self-attention mechanism gives the model a direct path to learn long-range dependencies without the vanishing gradient problems that plague deep RNNs.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_028",
+    "question": "What is the relationship between relative position encodings and sequence length generalization?",
+    "expected_answer": "Relative position encodings like RoPE and ALiBi generalize better to sequences longer than those seen during training compared to fixed sinusoidal encodings.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_029",
+    "question": "What property do sinusoidal positional encodings have?",
+    "expected_answer": "The encoding for position pos + k can be expressed as a linear function of the encoding for position pos, which allows the model to learn to attend by relative position.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_030",
+    "question": "What attention masking pattern is used in encoder layers?",
+    "expected_answer": "Encoder layers use regular self-attention without masking, allowing every token to attend to every other token in the input.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_031",
+    "question": "How does cross-attention work in the decoder?",
+    "expected_answer": "Cross-attention allows each decoder token to attend over the full encoder output, giving the decoder access to the entire source sequence at every generation step.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_032",
+    "question": "What ratio is typically maintained between FFN inner dimension and model dimension?",
+    "expected_answer": "The ratio is typically d_ff / d_model ≈ 4.",
+    "expected_source_chunks": ["39d3dad1620d0f3e510bc59e7eb396062b7c6e8336cab1c62027c6802db8a56a"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_033",
+    "question": "What is the purpose of the FFN in Transformer layers?",
+    "expected_answer": "The FFN provides substantial capacity to store factual knowledge within each Transformer layer.",
+    "expected_source_chunks": ["39d3dad1620d0f3e510bc59e7eb396062b7c6e8336cab1c62027c6802db8a56a"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_034",
+    "question": "What training objective is used for encoder-only models?",
+    "expected_answer": "Encoder-only models are trained with masked language modelling.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_035",
+    "question": "What training objective is used for decoder-only models?",
+    "expected_answer": "Decoder-only models are trained with next-token prediction.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_036",
+    "question": "How is attention output computed from attention weights?",
+    "expected_answer": "The output for each token is the weighted average of all value vectors, where weights are the attention probabilities that sum to one.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_037",
+    "question": "What are the original applications of the Transformer architecture?",
+    "expected_answer": "The Transformer was originally designed for sequence-to-sequence tasks such as machine translation.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_038",
+    "question": "What domains has the Transformer become dominant in?",
+    "expected_answer": "The Transformer has become the dominant architecture in natural language processing and beyond.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_039",
+    "question": "What happens after the softmax in the attention computation?",
+    "expected_answer": "After softmax is applied to the scaled attention logits, the resulting attention weights sum to one and are used to compute a weighted average of the value vectors.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_040",
+    "question": "Is the Transformer architecture primarily for understanding or generation tasks?",
+    "expected_answer": "Different Transformer variants serve different purposes. Encoder-only models excel at understanding tasks like classification and NER, while decoder-only models have become the dominant paradigm for generation, and encoder-decoder models excel at sequence-to-sequence mapping.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "multi_hop",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_041",
+    "question": "What techniques besides sinusoidal encodings have been used for positional information?",
+    "expected_answer": "Later work replaced fixed sinusoidal encodings with learned positional embeddings (e.g., BERT) or relative position encodings (e.g., RoPE, ALiBi) that generalize better to sequences longer than those seen during training.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "multi_hop",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_042",
+    "question": "How do the roles of query, key, and value vectors work together in attention?",
+    "expected_answer": "Each token produces a query vector representing what it is 'looking for' and a key vector representing what information it 'offers'. The dot product of a query with all keys produces unnormalized attention logits. After softmax, these become attention weights that determine how much of each value vector to include in the output.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "multi_hop",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_043",
+    "question": "Why is RoPE considered better than fixed positional encodings for long sequences?",
+    "expected_answer": "RoPE (Rotary Position Embeddings) is a relative position encoding that generalizes better to sequences longer than those seen during training, whereas fixed sinusoidal encodings cannot extrapolate beyond the training sequence length.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "multi_hop",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_044",
+    "question": "How many hyperparameters are mentioned as key design choices in Transformers?",
+    "expected_answer": "Six key hyperparameters are mentioned: d_model, n_heads, n_layers, d_ff, context length, and dropout.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "exact_term",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_045",
+    "question": "What is the relationship between model size and scaling laws according to Kaplan et al.?",
+    "expected_answer": "According to Kaplan et al., the key finding is that compute-optimal training allocates roughly equal resources to model size and data tokens, and model performance improves predictably as a power law with increases in model size.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "multi_hop",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_046",
+    "question": "What was the impact of the Chinchilla insights on model training practices?",
+    "expected_answer": "The Chinchilla insights drove a shift toward training smaller models on much larger datasets, producing models that are both more capable and cheaper to serve than previous large models.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "multi_hop",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_047",
+    "question": "How many tokens of training data does Chinchilla recommend per model parameter?",
+    "expected_answer": "The Chinchilla-optimal recipe recommends approximately 20 tokens of training data per model parameter.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "exact_term",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_048",
+    "question": "Can the Transformer handle variable-length sequences?",
+    "expected_answer": "Yes, the document mentions context length as a variable hyperparameter ranging from 512 to 1M+ tokens, indicating that Transformers can be designed to handle various sequence lengths.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "ambiguous",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_049",
+    "question": "What is the role of dropout in Transformer training?",
+    "expected_answer": "Dropout is used as a regularization technique during training, with typical values ranging from 0.0 to 0.3.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "factual_lookup",
+    "difficulty": "easy"
+  },
+  {
+    "id": "eval_050",
+    "question": "How do attention logits scale with embedding dimension?",
+    "expected_answer": "Attention logits scale with the dot product of query and key vectors. In high-dimensional spaces, these dot products tend to grow large, which is why the scaling factor 1/sqrt(d_k) is necessary to maintain well-behaved gradients.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "multi_hop",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_unanswerable_001",
+    "question": "What is the performance comparison between Transformers and RNNs on the BLEU score?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "medium",
+    "decline_reason": "The document does not contain specific BLEU score comparisons between Transformers and RNNs."
+  },
+  {
+    "id": "eval_unanswerable_002",
+    "question": "How much does Claude cost per million tokens?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "easy",
+    "decline_reason": "The document is about Transformer architecture and does not discuss Claude pricing."
+  },
+  {
+    "id": "eval_unanswerable_003",
+    "question": "What is the optimal batch size for training Transformers?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "medium",
+    "decline_reason": "The document does not discuss optimal batch sizes for Transformer training."
+  },
+  {
+    "id": "eval_unanswerable_004",
+    "question": "When was BERT released to the public?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "easy",
+    "decline_reason": "The document mentions BERT as an example model but does not provide release dates."
+  },
+  {
+    "id": "eval_unanswerable_005",
+    "question": "What are the limitations of the positional encoding approach?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "medium",
+    "decline_reason": "While the document discusses positional encoding techniques, it does not explicitly discuss their limitations."
+  },
+  {
+    "id": "eval_unanswerable_006",
+    "question": "How do Transformers perform on long documents exceeding 1 million tokens?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "hard",
+    "decline_reason": "The document lists context length as a hyperparameter up to 1M+ tokens but does not discuss performance beyond this range."
+  },
+  {
+    "id": "eval_unanswerable_007",
+    "question": "What hardware is needed to train a 12-billion parameter Transformer?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "hard",
+    "decline_reason": "The document does not discuss hardware requirements for training specific model sizes."
+  },
+  {
+    "id": "eval_unanswerable_008",
+    "question": "What percentage of parameters are allocated to the FFN layer?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "medium",
+    "decline_reason": "The document discusses FFN capacity but does not provide parameter allocation percentages."
+  },
+  {
+    "id": "eval_unanswerable_009",
+    "question": "How does attention mechanism complexity scale with sequence length?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "hard",
+    "decline_reason": "The document does not discuss computational complexity scaling of attention with sequence length."
+  },
+  {
+    "id": "eval_unanswerable_010",
+    "question": "What is the difference in memory usage between different positional encoding methods?",
+    "expected_answer": null,
+    "expected_source_chunks": [],
+    "category": "unanswerable",
+    "difficulty": "hard",
+    "decline_reason": "The document describes different positional encoding techniques but does not compare their memory usage."
+  },
+  {
+    "id": "eval_ambiguous_001",
+    "question": "Are Transformers good for all NLP tasks?",
+    "expected_answer": "The document indicates that different Transformer variants are suited to different tasks. Encoder-only models excel at understanding tasks, decoder-only models are suited for generation, and encoder-decoder models excel at sequence-to-sequence mapping tasks.",
+    "expected_source_chunks": ["c806516a4a3d57f9fe09f63b2def4880198094d56f7adebff8ff07ccc22dcde4"],
+    "category": "ambiguous",
+    "difficulty": "medium"
+  },
+  {
+    "id": "eval_ambiguous_002",
+    "question": "Should I use a large or small Transformer?",
+    "expected_answer": "The choice depends on your task and compute budget. Larger models generally use larger values across all dimensions. The Chinchilla scaling laws suggest allocating resources to both model size and data, with approximately 20 tokens per parameter being compute-optimal.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "ambiguous",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_ambiguous_003",
+    "question": "What is the best attention variant?",
+    "expected_answer": "The document does not recommend one attention variant as universally best. Standard self-attention works for most cases, multi-head attention enables learning diverse patterns, masked attention is essential for autoregressive generation, and cross-attention enables encoder-decoder interaction.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3", "220b4908c37209a845952a33d9239579a6a7591dda7ba43f18552a7858b396a4"],
+    "category": "ambiguous",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_ambiguous_004",
+    "question": "How should I choose hyperparameters for my Transformer?",
+    "expected_answer": "The document provides typical ranges for hyperparameters (d_model: 512-12288, n_heads: 8-96, n_layers: 6-96, etc.) and notes that larger models generally use larger values while maintaining certain ratios like d_ff/d_model ≈ 4 and d_k = d_model/n_heads.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "ambiguous",
+    "difficulty": "hard"
+  },
+  {
+    "id": "eval_ambiguous_005",
+    "question": "Which positional encoding technique should I use?",
+    "expected_answer": "The original Transformers used fixed sinusoidal encodings. Modern approaches include learned positional embeddings (like BERT) or relative position encodings (like RoPE or ALiBi) which generalize better to longer sequences. The choice depends on whether your sequences will exceed the training length.",
+    "expected_source_chunks": ["931fb959fc8af9821b22dca2a8a2423fa6c7cb64f040b4e59ae02fa88ad077c3"],
+    "category": "ambiguous",
+    "difficulty": "hard"
+  }
+]

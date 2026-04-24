@@ -49,6 +49,28 @@ def _scored(chunk_id: str, score: float, content: str = "test content") -> Score
     return ScoredChunk(chunk=_make_chunk(chunk_id, content), score=score)
 
 
+def _stub_verifier(
+    mock_verifier_cls,
+    *,
+    confidence: str = "high",
+    total_cited: int = 1,
+    supported_count: int = 1,
+) -> None:
+    """Configure a mocked CitationVerifier class so fast/thorough generate
+    nodes get well-typed attributes (not MagicMocks) for token_usage and
+    counters that flow into cost_tracker."""
+    vresult = MagicMock()
+    vresult.confidence = confidence
+    vresult.total_cited = total_cited
+    vresult.supported_count = supported_count
+    vresult.partial_count = 0
+    vresult.unsupported_count = 0
+    vresult.weak_indices = []
+    vresult.unsupported_indices = []
+    vresult.token_usage = {}  # empty dict — `if vresult.token_usage` is False
+    mock_verifier_cls.return_value.verify.return_value = vresult
+
+
 def _make_state(**overrides) -> dict:
     """Return a minimal RAGState dict with sensible defaults."""
     base = {
@@ -223,10 +245,10 @@ class TestRouteAfterRerank:
         assert route_after_rerank(state) == "fast"
 
     def test_score_at_confidence_threshold_routes_fast(self):
-        """Score exactly at confidence_threshold (0.7) → fast (>= check)."""
+        """Score exactly at confidence_threshold (0.8) → fast (>= check)."""
         state = _make_state(
-            reranked_chunks=[_scored("c1", 0.7)],
-            reranker_top_score=0.7,
+            reranked_chunks=[_scored("c1", 0.8)],
+            reranker_top_score=0.8,
         )
         assert route_after_rerank(state) == "fast"
 
@@ -237,20 +259,20 @@ class TestRouteAfterRerank:
         )
         assert route_after_rerank(state) == "thorough"
 
-    def test_score_exactly_minus_5_routes_thorough_not_decline(self):
-        """decline_threshold is -5.0; condition is top < -5.0, so -5.0 is NOT declined."""
+    def test_score_at_decline_threshold_routes_thorough_not_decline(self):
+        """decline_threshold is -3.0; condition is top < -3.0, so -3.0 is NOT declined."""
         state = _make_state(
-            reranked_chunks=[_scored("c1", -5.0)],
-            reranker_top_score=-5.0,
+            reranked_chunks=[_scored("c1", -3.0)],
+            reranker_top_score=-3.0,
         )
-        # -5.0 < -5.0 is False → not declined → falls to thorough
+        # -3.0 < -3.0 is False → not declined → falls to thorough
         assert route_after_rerank(state) == "thorough"
 
     def test_score_just_below_decline_threshold_routes_decline(self):
-        """Score -5.01 < -5.0 → decline."""
+        """Score -3.01 < -3.0 → decline."""
         state = _make_state(
-            reranked_chunks=[_scored("c1", -5.01)],
-            reranker_top_score=-5.01,
+            reranked_chunks=[_scored("c1", -3.01)],
+            reranker_top_score=-3.01,
         )
         assert route_after_rerank(state) == "decline"
 
@@ -316,6 +338,7 @@ class TestFastPath:
         high_scored = _scored(
             "c1", 0.85, "The Transformer was introduced by Vaswani et al."
         )
+        _stub_verifier(MockCitationVerifier)
 
         # Retriever mock returns candidates
         mock_retriever_instance = MagicMock()
@@ -355,6 +378,7 @@ class TestFastPath:
         """Fast path answer is the LLM output text."""
         chunk = _make_chunk("c1", "Self-attention mechanism text.")
         high_scored = _scored("c1", 0.9, "Self-attention mechanism text.")
+        _stub_verifier(MockCitationVerifier)
 
         mock_retriever_instance = MagicMock()
         mock_retriever_instance.retrieve_candidates.return_value = ([chunk], {})

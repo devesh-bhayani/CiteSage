@@ -29,10 +29,9 @@ from dataclasses import dataclass, field
 
 import structlog
 from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from ..config import get_settings
+from ..utils.llm_factory import get_grader_llm
 from ..prompts import load_prompt
 from ..retrieval._types import ScoredChunk
 
@@ -87,14 +86,13 @@ class CitationVerifier:
         escalated to the LLM judge.  Default 0.3 (30 % token overlap).
     """
 
-    WEAK_THRESHOLD: float = 0.3
+    WEAK_THRESHOLD: float = 0.55
 
     def __init__(self, weak_threshold: float | None = None) -> None:
         self._threshold = (
             weak_threshold if weak_threshold is not None else self.WEAK_THRESHOLD
         )
-        settings = get_settings()
-        self._llm = ChatAnthropic(model=settings.models.grader, max_tokens=16)
+        self._llm = get_grader_llm(max_tokens=16)
 
     # ------------------------------------------------------------------
     # Public API
@@ -254,8 +252,12 @@ class CitationVerifier:
                 for keyword in ("PARTIAL", "YES", "NO"):
                     if keyword in raw:
                         return keyword, usage
-                logger.warning("citation_verifier.unexpected_response", raw=raw[:40])
-                return "YES", usage
+                logger.warning(
+                    "citation_verifier.unexpected_response",
+                    raw=raw[:40],
+                    defaulting_to="NO",
+                )
+                return "NO", usage
             except Exception as exc:
                 last_exc = exc
                 if attempt < max_attempts:
@@ -268,4 +270,4 @@ class CitationVerifier:
                     )
                     time.sleep(delay)
         logger.error("citation_verifier.llm_failed", error=str(last_exc))
-        return "YES", {}  # default to supported on complete failure
+        return "PARTIAL", {}  # conservative: flag for review, don't silently approve

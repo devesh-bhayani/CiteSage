@@ -81,8 +81,12 @@ class TestRealConfig:
 
     def test_models_fields(self):
         s = get_settings()
-        assert "claude" in s.models.generator.lower()
-        assert "claude" in s.models.grader.lower()
+        # generator and grader model names depend on the configured provider
+        # (anthropic → "claude-*", ollama → e.g. "qwen3:8b"); the test only
+        # asserts they are non-empty strings and the local-only models are
+        # pinned to their expected values.
+        assert isinstance(s.models.generator, str) and s.models.generator
+        assert isinstance(s.models.grader, str) and s.models.grader
         assert s.models.embedder == "all-MiniLM-L6-v2"
         assert "cross-encoder" in s.models.reranker
 

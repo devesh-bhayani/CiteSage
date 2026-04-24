@@ -112,6 +112,7 @@ class ProjectConfig(BaseModel):
 
 class Settings(BaseModel):
     project: ProjectConfig
+    provider: str = "anthropic"  # "anthropic" or "ollama"
     models: ModelsConfig
     chunking: ChunkingConfig
     retrieval: RetrievalConfig

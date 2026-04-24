@@ -143,10 +143,10 @@ class TestExtractClaimContext:
 
 @pytest.fixture()
 def verifier_no_llm():
-    """CitationVerifier with ChatAnthropic replaced by a MagicMock."""
+    """CitationVerifier with the grader LLM replaced by a MagicMock."""
     mock_llm = MagicMock()
     with patch(
-        "citesage.generation.citation_verifier.ChatAnthropic",
+        "citesage.generation.citation_verifier.get_grader_llm",
         return_value=mock_llm,
     ):
         v = CitationVerifier()
@@ -248,7 +248,7 @@ class TestVerify:
         mock_llm.invoke.return_value = mock_response
 
         with patch(
-            "citesage.generation.citation_verifier.ChatAnthropic",
+            "citesage.generation.citation_verifier.get_grader_llm",
             return_value=mock_llm,
         ):
             v = CitationVerifier(weak_threshold=1.0)

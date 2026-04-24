@@ -2,9 +2,14 @@ project:
   name: citesage
   version: "0.1.0"
 
+provider: "ollama"  # "anthropic" or "ollama"
+
 models:
-  generator: "claude-sonnet-4-20250514"
-  grader: "claude-haiku-4-5-20251001"
+  # Current active: Ollama (offline). Switch provider to "anthropic" and the
+  # generator/grader below to claude-sonnet-4-20250514 / claude-haiku-4-5-20251001
+  # to meet the Phase 3 latency SLO.
+  generator: "qwen3:8b"
+  grader: "qwen3-small:latest"
   embedder: "all-MiniLM-L6-v2"
   reranker: "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
@@ -26,11 +31,15 @@ retrieval:
   # scores rarely exceed 0.55 for relevant passages; 0.3 is a good floor).
   vector_score_threshold: 0.3
   # Threshold applied to the cross-encoder reranker score (Phase 2+).
-  confidence_threshold: 0.7
+  # Raised to 0.8 in Phase 3 tuning — pushes more queries to the fast path so
+  # the thorough-path LLM chain isn't the p95 bottleneck.
+  confidence_threshold: 0.8
   # Cross-encoder scores below this are treated as clearly irrelevant; the
   # pipeline declines without an LLM grading call.
   # ms-marco scores for unrelated content cluster around -10 to -12.
-  decline_threshold: -5.0
+  # Tightened from -5.0 → -3.0 in Phase 3 tuning: unanswerable questions
+  # cluster in the -5..-3 band and were slipping into the thorough path.
+  decline_threshold: -3.0
 
 prompts:
   version: "v1"
@@ -48,3 +57,9 @@ pricing:
   claude-haiku-4-5-20251001:
     input_per_million: 0.25
     output_per_million: 1.25
+  qwen3:8b:
+    input_per_million: 0.0
+    output_per_million: 0.0
+  qwen3-small:latest:
+    input_per_million: 0.0
+    output_per_million: 0.0

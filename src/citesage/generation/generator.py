@@ -15,10 +15,10 @@ from dataclasses import dataclass, field
 
 import structlog
 from dotenv import load_dotenv
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from ..config import get_settings
+from ..utils.llm_factory import get_generator_llm
 from ..prompts import load_prompt
 from ..retrieval.retriever import RetrievalResult, ScoredChunk
 
@@ -61,10 +61,7 @@ class Generator:
     def __init__(self) -> None:
         settings = get_settings()
         self._model_name = settings.models.generator
-        self._llm = ChatAnthropic(
-            model=self._model_name,
-            max_tokens=1024,
-        )
+        self._llm = get_generator_llm(max_tokens=1024)
 
     # ------------------------------------------------------------------
     # Public API
