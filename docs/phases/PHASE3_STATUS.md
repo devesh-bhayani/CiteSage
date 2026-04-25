@@ -134,3 +134,27 @@ python -m citesage.evaluation.run_eval \
   --output  reports/baseline_scores.json
 ```
 
+## Post-tuning Ollama Baseline (2026-04-25)
+
+Full 65-query run completed after fixes landed. Results saved to
+`reports/baseline_ollama.json`.
+
+| Metric             | Pre-tuning | Post-tuning | Delta   | Target |
+| ------------------ | ---------- | ----------- | ------- | ------ |
+| Accuracy           | 66.9 %     | 63.1 %      | -3.8 pp | ≥ 85 % |
+| Citation precision | 23.6 %     | 33.0 %      | +9.4 pp | ≥ 90 % |
+| Decline recall     | 50.0 %     | 60.0 %      | +10 pp  | ≥ 85 % |
+| p95 latency        | 205.9 s    | 189.9 s     | —       | < 5 s  |
+
+Citation precision and decline recall both improved as expected from
+the fixes. Accuracy dipped 3.8 pp: the tighter `decline_threshold`
+(-5.0 → -3.0) correctly declined more unanswerable queries but also
+false-declined 2 answerable questions in the ambiguous category
+(`eval_ambiguous_001`, `eval_ambiguous_003`). Latency remains far
+above the SLO — Ollama/qwen3:8b cannot meet the 5 s target.
+
+**Remaining work:** Anthropic provider run (Sonnet 4.6 + Haiku 4.5)
+is expected to hit the latency SLO and improve accuracy. Also consider
+relaxing `decline_threshold` slightly (-3.0 → -2.5) to recover the 2
+false declines before the Anthropic run.
+

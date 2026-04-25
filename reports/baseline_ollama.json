@@ -1,0 +1,317 @@
+{
+  "timestamp": "2026-04-25T12:01:20.071075+00:00",
+  "total_queries": 65,
+  "items_completed": 65,
+  "aggregate": {
+    "accuracy": 0.6308,
+    "citation_precision": 0.3299,
+    "citation_all_correct_rate": 0.2708,
+    "decline_recall": 0.6,
+    "decline_precision": 0.5
+  },
+  "targets": {
+    "accuracy": 0.85,
+    "citation_precision": 0.9,
+    "decline_recall": 0.85,
+    "p95_latency_ms": 5000.0
+  },
+  "passes_targets": {
+    "accuracy": false,
+    "citation_precision": false,
+    "decline_recall": false,
+    "p95_latency_ms": false
+  },
+  "latency": {
+    "p50_ms": 20623.7,
+    "p95_ms": 189906.0
+  },
+  "token_usage": {
+    "total_input_tokens": 67870,
+    "total_output_tokens": 95218,
+    "average_per_query": 2509.0
+  },
+  "cost": {
+    "total_usd": 0.0,
+    "avg_cost_per_query": 0.0
+  },
+  "fast_path_ratio": 0.5077,
+  "by_category": {
+    "ambiguous": {
+      "count": 6,
+      "correct": 2,
+      "partial": 2,
+      "incorrect": 2,
+      "accuracy": 0.5,
+      "citation_checked": 4,
+      "citation_all_correct": 0,
+      "citation_precision": 0.125,
+      "failures": [
+        {
+          "id": "eval_048",
+          "grade": "partial",
+          "reason": "The actual answer confirms the Transformer can handle variable-length sequences but does not mention the context length as a variable hyperparameter with the specified range that the expected answer emphasizes.",
+          "citations_ok": false,
+          "citation_precision": 0.5
+        },
+        {
+          "id": "eval_ambiguous_001",
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_ambiguous_002",
+          "grade": "partial",
+          "reason": "The actual answer covers the dependency on task and resource constraints and the trade-offs between model size and resources but omits the specific Chinchilla scaling laws and the 20 tokens per parameter compute-optimal ratio mentioned in the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_ambiguous_003",
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        }
+      ]
+    },
+    "exact_term": {
+      "count": 9,
+      "correct": 6,
+      "partial": 1,
+      "incorrect": 2,
+      "accuracy": 0.7222,
+      "citation_checked": 8,
+      "citation_all_correct": 2,
+      "citation_precision": 0.25,
+      "failures": [
+        {
+          "id": "eval_020",
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_025",
+          "grade": "incorrect",
+          "reason": "The actual answer does not state the typical range of 8 to 96 but claims that the provided sources lack this information.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_044",
+          "grade": "partial",
+          "reason": "The actual answer omits the key hyperparameter 'dropout' and states a count of five instead of six.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        }
+      ]
+    },
+    "factual_lookup": {
+      "count": 33,
+      "correct": 18,
+      "partial": 8,
+      "incorrect": 7,
+      "accuracy": 0.6667,
+      "citation_checked": 29,
+      "citation_all_correct": 11,
+      "citation_precision": 0.4598,
+      "failures": [
+        {
+          "id": "eval_006",
+          "grade": "partial",
+          "reason": "The actual answer captures the conceptual essence of multi-head attention (joint attention across subspaces and benefits of multiple heads) but omits the dimension specification (d_model / h) and explicit mention of learned linear projections required by the expected answer.",
+          "citations_ok": true,
+          "citation_precision": 1.0
+        },
+        {
+          "id": "eval_007",
+          "grade": "partial",
+          "reason": "The actual answer omits the subscript 'i' for the key weight matrix, which is an important detail in the multi-head attention formula.",
+          "citations_ok": false,
+          "citation_precision": 0.5
+        },
+        {
+          "id": "eval_011",
+          "grade": "partial",
+          "reason": "The actual answer states the count of two sublayers but omits the specific names of the sublayers (multi-head self-attention and feed-forward network) that are critical to the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_013",
+          "grade": "incorrect",
+          "reason": "pipeline error: Ollama unreachable at default endpoint (timeout=60.0s, model=qwen3-small:latest): timed out. Check that the Ollama daemon is running (https://ollama.com/download).",
+          "citations_ok": false,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_016",
+          "grade": "partial",
+          "reason": "The actual answer omits the historical context of the original paper using ReLU and the modern usage distinction that the expected answer explicitly states.",
+          "citations_ok": true,
+          "citation_precision": 1.0
+        },
+        {
+          "id": "eval_018",
+          "grade": "incorrect",
+          "reason": "The actual answer states that the provided sources do not mention the difference and the system lacks information, thus failing to provide any explanation of encoder-only versus decoder-only models as required by the question.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_021",
+          "grade": "incorrect",
+          "reason": "The actual answer states a lack of information in the provided documents rather than providing the specific examples (T5 and BART) and best-suited tasks (summarization and translation) that the expected answer requires.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_022",
+          "grade": "partial",
+          "reason": "The actual answer captures the core power law relationship but omits the specific attribution to Kaplan et al. (2020) and adds an extra detail about compute-optimal training not present in the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_027",
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_029",
+          "grade": "partial",
+          "reason": "The actual answer states the linear expressibility property but omits the consequence that it enables relative position learning.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_030",
+          "grade": "incorrect",
+          "reason": "The actual answer states that the provided sources do not specify the attention masking pattern for encoder layers, whereas the expected answer explicitly states that encoder layers use self-attention without masking.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_035",
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_037",
+          "grade": "partial",
+          "reason": "The actual answer states that the Transformer was originally designed for sequence-to-sequence tasks but omits the specific example of machine translation, which is a key detail in the expected answer.",
+          "citations_ok": true,
+          "citation_precision": 1.0
+        },
+        {
+          "id": "eval_038",
+          "grade": "partial",
+          "reason": "The actual answer omits the important detail that the Transformer is dominant in domains beyond natural language processing as specified in the expected answer.",
+          "citations_ok": true,
+          "citation_precision": 1.0
+        },
+        {
+          "id": "eval_049",
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        }
+      ]
+    },
+    "multi_hop": {
+      "count": 7,
+      "correct": 2,
+      "partial": 3,
+      "incorrect": 2,
+      "accuracy": 0.5,
+      "citation_checked": 7,
+      "citation_all_correct": 0,
+      "citation_precision": 0.0,
+      "failures": [
+        {
+          "id": "eval_040",
+          "grade": "incorrect",
+          "reason": "The actual answer incorrectly states the Transformer architecture is primarily for sequence-to-sequence tasks while the expected answer emphasizes that different variants serve both understanding and generation tasks.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_042",
+          "grade": "partial",
+          "reason": "The actual answer omits the unnormalized attention logits and the softmax step that transform them into attention weights, which are critical components explicitly stated in the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_045",
+          "grade": "partial",
+          "reason": "The actual answer omits the critical detail about compute-optimal training allocating equal resources to model size and data tokens, which is a key finding in Kaplan et al.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_046",
+          "grade": "partial",
+          "reason": "The actual answer omits the critical comparison to previous large models that is explicitly stated in the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_050",
+          "grade": "incorrect",
+          "reason": "The actual answer describes dimension ratios in transformer models without addressing the core mechanism of how attention logits scale via dot products and the necessity of the 1/sqrt(d_k) scaling factor for gradient stability.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        }
+      ]
+    },
+    "unanswerable": {
+      "count": 10,
+      "correct": 6,
+      "partial": 0,
+      "incorrect": 4,
+      "accuracy": 0.6,
+      "citation_checked": 0,
+      "citation_all_correct": 0,
+      "citation_precision": null,
+      "failures": [
+        {
+          "id": "eval_unanswerable_005",
+          "grade": "declined_incorrect",
+          "reason": "failed to decline \u2014 should have declined this unanswerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_unanswerable_008",
+          "grade": "declined_incorrect",
+          "reason": "failed to decline \u2014 should have declined this unanswerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_unanswerable_009",
+          "grade": "declined_incorrect",
+          "reason": "failed to decline \u2014 should have declined this unanswerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_unanswerable_010",
+          "grade": "declined_incorrect",
+          "reason": "failed to decline \u2014 should have declined this unanswerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        }
+      ]
+    }
+  }
+}
