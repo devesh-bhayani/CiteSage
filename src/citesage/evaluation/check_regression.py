@@ -25,7 +25,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-
 # ---------------------------------------------------------------------------
 # Tolerance — flag WARNING when a metric drops more than this fraction
 # ---------------------------------------------------------------------------

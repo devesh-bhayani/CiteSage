@@ -24,7 +24,6 @@ from citesage.config import ChunkingStrategyConfig
 from citesage.ingestion.chunker import ChunkerFactory, TokenChunker, _make_chunk_id
 from citesage.ingestion.models import Document
 
-
 # ---------------------------------------------------------------------------
 # Shared encoding (module-level to avoid repeated init overhead)
 # ---------------------------------------------------------------------------

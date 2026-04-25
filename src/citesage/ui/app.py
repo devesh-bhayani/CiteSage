@@ -25,7 +25,6 @@ import streamlit as st
 
 from ..ingestion.loaders import ALLOWED_EXTENSIONS, MAX_FILE_SIZE_BYTES
 
-
 DEFAULT_API_URL = os.environ.get("CITESAGE_API_URL", "http://localhost:8000")
 DEFAULT_API_KEY = os.environ.get("CITESAGE_API_KEY", "")
 

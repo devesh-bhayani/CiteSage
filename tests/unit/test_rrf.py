@@ -18,7 +18,6 @@ import pytest
 from citesage.ingestion.models import Chunk
 from citesage.retrieval.rrf import rrf_fuse
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -23,7 +23,6 @@ from citesage.ingestion.models import Chunk
 from citesage.retrieval._types import ScoredChunk
 from citesage.retrieval.rrf import rrf_fuse
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -9,7 +9,6 @@ import pytest
 
 from citesage.utils.cost_tracker import CostTracker, QueryCost, _model_label
 
-
 # Pricing fixture matching the values in config.yaml
 PRICING = {
     "claude-sonnet-4-20250514": {

@@ -19,7 +19,6 @@ from sentence_transformers import SentenceTransformer
 from ..config import get_settings
 from .models import Chunk
 
-
 # ---------------------------------------------------------------------------
 # ChromaDB vector store
 # ---------------------------------------------------------------------------

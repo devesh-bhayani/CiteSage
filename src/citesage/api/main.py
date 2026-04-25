@@ -284,7 +284,7 @@ async def _http_exception_handler(request: Request, exc: StarletteHTTPException)
 @app.exception_handler(RequestValidationError)
 async def _validation_exception_handler(request: Request, exc: RequestValidationError):
     return _problem(
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
         title="ValidationError",
         detail=str(exc.errors()[:3]),  # truncate to avoid giant payloads
         instance=str(request.url.path),

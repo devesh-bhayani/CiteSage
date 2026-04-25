@@ -27,7 +27,6 @@ from citesage.ingestion.models import Chunk
 from citesage.ingestion.pipeline import IngestPipeline
 from citesage.ingestion.storage import BM25Index, ChromaStore
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

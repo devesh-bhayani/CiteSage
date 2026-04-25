@@ -15,7 +15,6 @@ from citesage.generation.citation_verifier import CitationVerifier
 from citesage.ingestion.models import Chunk
 from citesage.retrieval._types import ScoredChunk
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
