@@ -259,19 +259,19 @@ class TestRouteAfterRerank:
         assert route_after_rerank(state) == "thorough"
 
     def test_score_at_decline_threshold_routes_thorough_not_decline(self):
-        """decline_threshold is -3.0; condition is top < -3.0, so -3.0 is NOT declined."""
+        """decline_threshold is -2.5; condition is top < -2.5, so -2.5 is NOT declined."""
         state = _make_state(
-            reranked_chunks=[_scored("c1", -3.0)],
-            reranker_top_score=-3.0,
+            reranked_chunks=[_scored("c1", -2.5)],
+            reranker_top_score=-2.5,
         )
-        # -3.0 < -3.0 is False → not declined → falls to thorough
+        # -2.5 < -2.5 is False → not declined → falls to thorough
         assert route_after_rerank(state) == "thorough"
 
     def test_score_just_below_decline_threshold_routes_decline(self):
-        """Score -3.01 < -3.0 → decline."""
+        """Score -2.51 < -2.5 → decline."""
         state = _make_state(
-            reranked_chunks=[_scored("c1", -3.01)],
-            reranker_top_score=-3.01,
+            reranked_chunks=[_scored("c1", -2.51)],
+            reranker_top_score=-2.51,
         )
         assert route_after_rerank(state) == "decline"
 

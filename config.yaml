@@ -39,7 +39,10 @@ retrieval:
   # ms-marco scores for unrelated content cluster around -10 to -12.
   # Tightened from -5.0 → -3.0 in Phase 3 tuning: unanswerable questions
   # cluster in the -5..-3 band and were slipping into the thorough path.
-  decline_threshold: -3.0
+  # Loosened -3.0 → -2.5: post-tuning Ollama eval showed 6 answerable
+  # queries false-declined at -3.0; -2.5 recovers those without re-opening
+  # the unanswerable leakage.
+  decline_threshold: -2.5
 
 prompts:
   version: "v1"
