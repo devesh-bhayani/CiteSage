@@ -10,6 +10,7 @@ Both backends use chunk_id as the canonical key, enabling upsert semantics
 from __future__ import annotations
 
 import pickle
+from functools import lru_cache
 from pathlib import Path
 
 import chromadb
@@ -18,6 +19,20 @@ from sentence_transformers import SentenceTransformer
 
 from ..config import get_settings
 from .models import Chunk
+
+
+@lru_cache(maxsize=None)
+def _load_embedder(name: str) -> SentenceTransformer:
+    """Load (and cache) a SentenceTransformer embedder by name.
+
+    Loaded once per process and shared across ``ChromaStore`` instances. The
+    graph builds a ``Retriever`` (which constructs a ``ChromaStore``) inside
+    node functions, so without this cache the embedder reloaded every query,
+    contributing to the OOM that killed eval runs mid-stream. Cache key is the
+    config-provided name, preserving ``models.embedder`` swappability.
+    """
+    return SentenceTransformer(name)
+
 
 # ---------------------------------------------------------------------------
 # ChromaDB vector store
@@ -38,7 +53,7 @@ class ChromaStore:
         Path(path).mkdir(parents=True, exist_ok=True)
 
         self._client = chromadb.PersistentClient(path=path)
-        self._embedder = SentenceTransformer(settings.models.embedder)
+        self._embedder = _load_embedder(settings.models.embedder)
         self._collection = self._client.get_or_create_collection(
             name=self.COLLECTION_NAME,
             metadata={"hnsw:space": "cosine"},

@@ -6,6 +6,8 @@ Chunks scoring below ``retrieval.confidence_threshold`` are filtered out.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import structlog
 from sentence_transformers import CrossEncoder
 
@@ -14,6 +16,20 @@ from ..ingestion.models import Chunk
 from ._types import ScoredChunk
 
 logger = structlog.get_logger(__name__)
+
+
+@lru_cache(maxsize=None)
+def _load_cross_encoder(name: str) -> CrossEncoder:
+    """Load (and cache) a CrossEncoder by name.
+
+    The model is loaded once per process and reused across every ``Reranker``
+    instance. The graph constructs a ``Reranker`` inside node functions (so
+    several times per query); without this cache each construction reloaded
+    ~90 MB of weights, leaking memory until the process was OOM-killed mid-eval
+    (~query 20). Cache key is the config-provided model name, so swapping
+    ``models.reranker`` still yields a fresh model.
+    """
+    return CrossEncoder(name)
 
 
 class Reranker:
@@ -29,7 +45,7 @@ class Reranker:
     def __init__(self, model_name: str | None = None) -> None:
         settings = get_settings()
         name = model_name or settings.models.reranker
-        self._model = CrossEncoder(name)
+        self._model = _load_cross_encoder(name)
         self._settings = settings
 
     def rerank(
