@@ -31,9 +31,14 @@ class OllamaConnectionError(RuntimeError):
     """
 
 
-# Long enough for qwen3:8b on modest hardware, short enough that a dead daemon
-# fails fast instead of eating the 7 s retry budget on socket timeouts.
-_OLLAMA_TIMEOUT_S = float(os.environ.get("CITESAGE_OLLAMA_TIMEOUT", "60"))
+# Read timeout for a single Ollama call. Generous (180 s) because the eval
+# alternates generator (qwen3:8b) and grader (qwen3-small) every query, forcing
+# a model swap; a cold reload under memory pressure can exceed 60 s and was
+# aborting eval runs mid-stream on a grader ReadTimeout (~6/65 queries in).
+# A genuinely dead daemon still fails fast via "connection refused" (instant,
+# independent of this read timeout), so dead-daemon detection isn't slowed.
+# Override with CITESAGE_OLLAMA_TIMEOUT.
+_OLLAMA_TIMEOUT_S = float(os.environ.get("CITESAGE_OLLAMA_TIMEOUT", "180"))
 
 
 def _get_provider() -> str:
