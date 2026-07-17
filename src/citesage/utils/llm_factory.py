@@ -40,6 +40,10 @@ class OllamaConnectionError(RuntimeError):
 # Override with CITESAGE_OLLAMA_TIMEOUT.
 _OLLAMA_TIMEOUT_S = float(os.environ.get("CITESAGE_OLLAMA_TIMEOUT", "180"))
 
+# Sampling seed, paired with temperature=0 in OllamaLLM.invoke() to make eval
+# runs reproducible. Override with CITESAGE_OLLAMA_SEED.
+_OLLAMA_SEED = int(os.environ.get("CITESAGE_OLLAMA_SEED", "42"))
+
 
 def _get_provider() -> str:
     """Return the configured provider name (lowercase)."""
@@ -100,13 +104,24 @@ class OllamaLLM:
         # no timeout, which lets dead-daemon calls hang on socket read.
         client = _ollama.Client(timeout=_OLLAMA_TIMEOUT_S)
 
-        # think=False suppresses <think> reasoning tags natively.
-        # Avoid passing options dict — it causes model reload and breaks thinking suppression.
+        # think=False asks the model to skip reasoning tags. qwen3-family
+        # models ignore it and reason inline anyway, so the </think> strip
+        # below is the real defense (verified: tags leak with AND without the
+        # options dict — an older comment here blamed options for that, wrong).
+        #
+        # options pins greedy decoding so eval runs are reproducible. Without
+        # it, identical eval runs varied 6-10pp because the generator, relevance
+        # grader, citation judge, and eval grader all sampled independently.
+        #
+        # Deliberately NOT passing num_predict: the citation judge requests
+        # max_tokens=16, but these models emit reasoning before the verdict, so
+        # a low token cap truncates mid-reasoning and loses the YES/NO/PARTIAL.
         try:
             raw = client.chat(
                 model=self.model,
                 messages=converted,
                 think=False,
+                options={"temperature": 0, "seed": _OLLAMA_SEED},
             )
         except Exception as exc:
             msg = str(exc).lower()

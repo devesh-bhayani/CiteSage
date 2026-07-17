@@ -39,8 +39,9 @@ Known issues & scoped fixes: **GAPS.md** (audit ordered by severity — check it
 ## Gotchas (things that WILL bite you)
 - **Eval exit code 1 = targets missed, not a crash.** Read the printed summary before diagnosing a "failure".
 - **Eval writes output files only at the very end.** A killed run leaves stale files; check the JSON `timestamp` field before trusting `reports/baseline_ollama.json`.
-- **Ollama eval metrics vary ±6–10 pp between identical runs** (no temperature/seed pinning — GAPS.md #1). Never conclude anything from a single-run delta.
-- **Don't pass an `options` dict to `ollama.chat()`** in `utils/llm_factory.py` without testing: it historically forced model reloads and broke `<think>` suppression. Related: `max_tokens` is currently a no-op on Ollama.
+- **Ollama decoding is pinned** (`temperature: 0` + `CITESAGE_OLLAMA_SEED`, default 42) in `utils/llm_factory.py`, so repeat runs are reproducible. Historic baselines taken before this pinning carry a ±6–10 pp noise floor — don't compare across that boundary.
+- **`options` on `ollama.chat()` is safe — but never add `num_predict` to it.** The citation judge asks for `max_tokens=16` and qwen3 models emit reasoning *before* the verdict, so a low token cap truncates mid-reasoning and destroys the YES/NO/PARTIAL answer. `max_tokens` being a no-op on Ollama is load-bearing, not a bug to fix (GAPS.md #4).
+- **`think=False` does not actually suppress reasoning** on qwen3 models — tags leak with and without `options`. The `content.split("</think>")[-1]` strip in `OllamaLLM.invoke` is the real defense. Don't delete it.
 - **The `lru_cache` model loaders** (`_load_cross_encoder` in `retrieval/reranker.py`, `_load_embedder` in `ingestion/storage.py`) **prevent an OOM** that used to kill eval runs at ~query 20. Never remove them.
 - **Changing chunk size/overlap or chunking logic silently invalidates all 65 `expected_source_chunks` IDs** in `tests/eval/golden_dataset.json` (IDs are SHA-256 of content+path).
 - `generation/generator.py` is dead code (superseded by graph nodes) — don't extend it. `prompts/v1/verify_citations.yaml` (plural) is also unused; the live one is `verify_citation.yaml`.

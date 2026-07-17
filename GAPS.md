@@ -4,11 +4,19 @@
 
 ---
 
-## 1. Eval is non-deterministic — no metric from it can be trusted (CRITICAL for the project's whole premise)
+## 1. ~~Eval is non-deterministic~~ — FIXED 2026-06-15
 
-**What:** Two identical back-to-back Ollama eval runs (same code, same data, same config) produced accuracy 64.6% vs 58.5%, decline recall 70% vs 60%. Nothing pins sampling: `OllamaLLM.invoke()` (`src/citesage/utils/llm_factory.py`) deliberately passes no options dict (it caused model reloads), so temperature/seed are model defaults — for the generator, the relevance grader, the citation judge, **and the eval's answer grader**. Randomness compounds across 4 LLM roles.
-**Why it matters:** The project's flagship claim is measured quality. A ±6–10 pp noise floor makes tuning changes (like the `decline_threshold` -3.0 → -2.5 commit) unmeasurable — that change was "validated" against noise.
-**Fix (scoped):** In `OllamaLLM.invoke`, add `options={"temperature": 0, "seed": 42}` to the `client.chat()` call; run `--subset 10` twice and diff outputs to confirm determinism AND confirm think-suppression still works (the code comment warns options may break it — if it does, set temperature via a custom Modelfile instead). One file, one test loop.
+**What it was:** Two identical back-to-back Ollama eval runs (same code, data, config) produced accuracy 64.6% vs 58.5%, decline recall 70% vs 60%. Nothing pinned sampling: `OllamaLLM.invoke()` passed no options dict, so temperature/seed were model defaults across all four LLM roles (generator, relevance grader, citation judge, eval grader). Randomness compounded.
+
+**Fix shipped:** `OllamaLLM.invoke()` now passes `options={"temperature": 0, "seed": _OLLAMA_SEED}` (`src/citesage/utils/llm_factory.py`); seed defaults to 42, override via `CITESAGE_OLLAMA_SEED`.
+
+**Verified, not assumed:**
+- Wrapper level: same prompt ×3 → 1 distinct output (was 3).
+- End-to-end: `--subset 10` run twice → **every** aggregate and per-category metric identical (accuracy 0.9500 / 0.9500, citation precision 0.7000 / 0.7000, decline recall 1.0 / 1.0, fast-path ratio 0.9 / 0.9). Per-query records byte-identical once `latency_ms` (wall-clock) is excluded.
+- The old code comment claiming options "breaks thinking suppression" was **empirically false**: `<think>` tags leak with *and* without options; the `</think>` strip is the actual defense. Comment corrected.
+- No model-reload penalty: call latencies flat at 2.9/2.9/3.1 s.
+
+**Residual:** baselines recorded before this commit (incl. `reports/baseline_ollama.json`, acc 64.6%) still carry the old ±6–10 pp noise floor — they are not comparable to post-pinning runs. Re-baseline before drawing any conclusion from a delta. Note the pinning makes runs *reproducible*, not *correct*: it freezes one sample of model behaviour, so absolute scores can still shift if the model or prompts change.
 
 ## 2. Corpus is 1 document / 4 chunks — retrieval metrics are theater (CRITICAL for credibility)
 
@@ -26,7 +34,8 @@
 
 **What:** `OllamaLLM.__init__` stores `num_predict` but `invoke()` never passes it (`src/citesage/utils/llm_factory.py:88-105`). The citation judge requests `max_tokens=16`, the grader 512 — Ollama ignores both and can generate unbounded output.
 **Why it matters:** Latency (a chatty judge inflates p95) and silent API-contract violation; on Anthropic the same argument works, so behavior diverges by provider.
-**Fix (scoped):** Bundle with gap #1: pass `options={"num_predict": self.num_predict, "temperature": 0, "seed": 42}` and verify think-suppression survives. If options truly must stay off, delete the `num_predict` parameter and document the limitation in the class docstring.
+**Correction (2026-06-15):** the original advice here — "bundle with gap #1, pass `num_predict` in the options dict" — is **wrong and must not be followed**. While fixing #1 it turned out qwen3 models emit reasoning *before* their answer, so honouring `max_tokens=16` from the citation judge would truncate mid-reasoning and destroy the YES/NO/PARTIAL verdict. `max_tokens` being ignored is what currently keeps the judge working.
+**Fix (scoped):** Do NOT pass `num_predict`. Instead make the contract honest: drop the unused `num_predict` parameter from `OllamaLLM.__init__`, and document in the class docstring that token caps are not honoured on Ollama because thinking models need headroom. If a cap is ever genuinely needed, size it well above the reasoning budget (hundreds, not 16) and re-verify the judge still returns a verdict.
 
 ## 5. No CI at all, despite CI-shaped tooling
 
