@@ -18,11 +18,20 @@
 
 **Residual:** baselines recorded before this commit (incl. `reports/baseline_ollama.json`, acc 64.6%) still carry the old ±6–10 pp noise floor — they are not comparable to post-pinning runs. Re-baseline before drawing any conclusion from a delta. Note the pinning makes runs *reproducible*, not *correct*: it freezes one sample of model behaviour, so absolute scores can still shift if the model or prompts change.
 
-## 2. Corpus is 1 document / 4 chunks — retrieval metrics are theater (CRITICAL for credibility)
+## 2. ~~Corpus is 1 document / 4 chunks~~ — FIXED 2026-07-17, surfaced a new finding (was CRITICAL)
 
-**What:** `data/documents/` holds one file; Chroma has 4 chunks. `retrieval.rerank_candidates: 15` exceeds the entire corpus. The 65-query eval "retrieves" from a pool where random choice gets ~25% precision.
-**Why it matters:** "Hybrid retrieval + RRF + reranking" cannot be demonstrated, and anyone who inspects the repo sees it immediately.
-**Fix (scoped):** Ingest 15–30 real documents (`python -m citesage.cli --ingest <dir>`). Chunk IDs are content-addressed, so existing golden `expected_source_chunks` stay valid — the eval gets *harder* (real distractors), not broken. Then re-run eval. No code changes.
+**What it was:** `data/documents/` held one file; Chroma had 4 chunks. `retrieval.rerank_candidates: 15` exceeded the entire corpus, so "hybrid retrieval + RRF + reranking" was never actually exercised — every retrieval trivially returned all 4 chunks regardless of query.
+
+**Fix shipped:** Added 15 original markdown documents (`data/documents/*.md` — RNNs, LSTM/GRU, BERT, GPT, word embeddings, optimizers, dropout/regularization, LayerNorm/BatchNorm, tokenization, positional encoding variants, ViT, RAG, fine-tuning/PEFT, quantization, diffusion models) covering adjacent ML/DL topics chosen to give real, topically-related distractors against the existing 65-question eval set. Corpus is now 16 documents / 34 chunks. `transformer_architecture.md` was left untouched.
+
+**Verified, not assumed:**
+- All 4 chunk IDs referenced by `tests/eval/golden_dataset.json` still resolve in Chroma post-ingest (content-addressed IDs, unaffected by adding unrelated files).
+- Spot queries confirm topical discrimination: "How does dropout work?" → `regularization_dropout.md` top-ranked (score 4.03); "What is the self-attention formula?" → `transformer_architecture.md` (0.99); a query below the fast-path confidence bar still correctly ranked the right document first among real competitors, rather than failing.
+- 149 unit/integration tests unaffected (isolated fixtures).
+
+**New finding surfaced by this fix (not a regression — this is the corpus finally being large enough to reveal it):** across the 55 answerable golden questions, the expected source chunk reaches the reranker's candidate pool (top-15, post RRF fusion) only **80%** of the time (44/55), and survives into the final top-5 handed to generation only **58%** of the time (32/55). With the old 4-chunk corpus this was ~100% by construction, which is exactly why the old baseline's citation/accuracy numbers couldn't be trusted as retrieval quality signal.
+
+**Follow-up (separate from this fix, needs its own decision):** `retrieval.bm25_top_k` / `vector_top_k` (20 each) and `rerank_candidates` (15) in `config.yaml` were never tuned against a real multi-document corpus — they were sized when 4 chunks was the entire corpus. Whether to raise them (more recall headroom, more reranker cost) or leave them (representative of a real deployment's retrieval budget) is a tuning call, not a bug fix — don't silently change these without re-running eval to check the effect, per the "don't retune thresholds against a noisy metric" lesson from GAPS.md #1. A full 65-query LLM eval against this new corpus has **not** been run yet; `reports/baseline_ollama.json` still reflects the old 4-chunk corpus and should not be compared against a future run on this expanded one.
 
 ## 3. BM25 pickle + Chroma client reconstructed on every query
 

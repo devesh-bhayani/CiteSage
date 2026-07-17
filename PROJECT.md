@@ -67,8 +67,8 @@ QUERY (LangGraph state machine — graph/pipeline.py, graph/nodes.py)
 
 - All 149 tests pass. The pipeline runs end-to-end on Ollama, 65/65 eval queries, no crashes.
 - **All 4 Phase-3 eval targets fail on Ollama** (latest committed baseline `reports/baseline_ollama.json`: accuracy 64.6% vs ≥85%, citation precision 36.9% vs ≥90%, decline recall 70% vs ≥85%, p95 122 s vs <5 s). This is a local-model ceiling; the intended "green" run uses the Anthropic provider and has never been executed (blocked on API credits).
-- **Ollama eval results are non-deterministic**: back-to-back identical runs differed by 6–10 pp (58.5% vs 64.6% accuracy). No single Ollama run is a trustworthy metric. See GAPS.md #1.
-- **The corpus is one document (4 chunks)** — `data/documents/transformer_architecture.md`. Retrieval metrics over a 4-chunk corpus measure methodology, not retrieval. See GAPS.md #2.
+- **Ollama decoding is now pinned** (temperature=0, seed=42) so eval runs are reproducible (GAPS.md #1, fixed). Baselines recorded before that fix carry a ±6–10 pp noise floor and aren't comparable to post-pinning runs.
+- **The corpus is now 16 documents / 34 chunks** (GAPS.md #2, fixed 2026-07-17) — 15 original ML/DL notes added alongside the original `transformer_architecture.md` to give retrieval real distractors. This surfaced a genuine finding: the golden set's expected chunk reaches the reranker's candidate pool only 80% of the time and survives to the final top-5 only 58% of the time — retrieval difficulty that a 4-chunk corpus could never reveal. `reports/baseline_ollama.json` still reflects the *old* 4-chunk corpus; no eval has been run against the expanded one yet.
 
 ## Critical paths (load-bearing — change with care)
 
