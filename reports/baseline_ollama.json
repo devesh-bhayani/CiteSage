@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-06-07T05:00:44.781523+00:00",
+  "timestamp": "2026-07-17T09:54:31.426143+00:00",
   "total_queries": 65,
   "items_completed": 65,
   "aggregate": {
-    "accuracy": 0.6462,
-    "citation_precision": 0.3693,
-    "citation_all_correct_rate": 0.3182,
-    "decline_recall": 0.7,
-    "decline_precision": 0.3889
+    "accuracy": 0.6077,
+    "citation_precision": 0.35,
+    "citation_all_correct_rate": 0.2889,
+    "decline_recall": 0.6,
+    "decline_precision": 0.375
   },
   "targets": {
     "accuracy": 0.85,
@@ -22,36 +22,36 @@
     "p95_latency_ms": false
   },
   "latency": {
-    "p50_ms": 5975.6,
-    "p95_ms": 122027.5
+    "p50_ms": 7021.0,
+    "p95_ms": 112193.9
   },
   "token_usage": {
-    "total_input_tokens": 65181,
-    "total_output_tokens": 112558,
-    "average_per_query": 2734.4
+    "total_input_tokens": 65250,
+    "total_output_tokens": 107966,
+    "average_per_query": 2664.9
   },
   "cost": {
     "total_usd": 0.0,
     "avg_cost_per_query": 0.0
   },
-  "fast_path_ratio": 0.5077,
+  "fast_path_ratio": 0.4923,
   "by_category": {
     "ambiguous": {
       "count": 6,
       "correct": 2,
-      "partial": 0,
-      "incorrect": 4,
-      "accuracy": 0.3333,
-      "citation_checked": 2,
+      "partial": 1,
+      "incorrect": 3,
+      "accuracy": 0.4167,
+      "citation_checked": 3,
       "citation_all_correct": 0,
-      "citation_precision": 0.0,
+      "citation_precision": 0.1667,
       "failures": [
         {
           "id": "eval_048",
-          "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
+          "grade": "partial",
+          "reason": "The actual answer confirms Transformers can handle variable-length sequences but omits the specific detail about context length being a variable hyperparameter ranging from 512 to 1M+ tokens as stated in the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.5
         },
         {
           "id": "eval_ambiguous_001",
@@ -79,19 +79,19 @@
     "exact_term": {
       "count": 9,
       "correct": 5,
-      "partial": 0,
-      "incorrect": 4,
-      "accuracy": 0.5556,
-      "citation_checked": 5,
+      "partial": 1,
+      "incorrect": 3,
+      "accuracy": 0.6111,
+      "citation_checked": 7,
       "citation_all_correct": 2,
-      "citation_precision": 0.4,
+      "citation_precision": 0.2857,
       "failures": [
         {
           "id": "eval_019",
           "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
+          "reason": "The actual answer does not provide any examples of encoder-only models and instead states a lack of information in the provided documents, which completely misses the point of the question and fails to match the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.0
         },
         {
           "id": "eval_020",
@@ -109,19 +109,19 @@
         },
         {
           "id": "eval_044",
-          "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
+          "grade": "partial",
+          "reason": "The actual answer omits the key hyperparameter 'dropout' and misstates the count as five instead of six.",
+          "citations_ok": false,
+          "citation_precision": 0.0
         }
       ]
     },
     "factual_lookup": {
       "count": 33,
-      "correct": 21,
+      "correct": 20,
       "partial": 7,
-      "incorrect": 5,
-      "accuracy": 0.7424,
+      "incorrect": 6,
+      "accuracy": 0.7121,
       "citation_checked": 30,
       "citation_all_correct": 11,
       "citation_precision": 0.4417,
@@ -129,49 +129,42 @@
         {
           "id": "eval_006",
           "grade": "partial",
-          "reason": "The actual answer describes the conceptual purpose of multi-head attention but omits the specific dimension details (d_k = d_v = d_model / h) that are explicitly stated in the expected answer.",
+          "reason": "The actual answer describes the conceptual purpose of multi-head attention but omits the technical details of learned linear projections and the dimension of the subspaces (d_model/h) specified in the expected answer.",
           "citations_ok": true,
           "citation_precision": 1.0
         },
         {
           "id": "eval_011",
           "grade": "partial",
-          "reason": "The actual answer states the count of sublayers (two) but omits the specific names of the sublayers (multi-head self-attention and feed-forward network), which are essential details in the expected answer.",
+          "reason": "The actual answer states the number of sublayers (two) but omits the specific names of the sublayers, which are essential details required by the expected answer.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
-          "id": "eval_016",
-          "grade": "partial",
-          "reason": "The actual answer lists the activation functions without specifying the historical context (original paper vs. modern models) that the expected answer provides.",
-          "citations_ok": true,
-          "citation_precision": 1.0
-        },
-        {
           "id": "eval_018",
           "grade": "incorrect",
-          "reason": "The actual answer states that the system lacks the necessary information to answer the question, which does not provide the key difference between encoder-only and decoder-only models as expected.",
+          "reason": "The actual answer states that the provided documents lack the necessary information to answer the question, whereas the expected answer provides a detailed explanation of the difference between encoder-only and decoder-only models.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
           "id": "eval_021",
           "grade": "partial",
-          "reason": "The actual answer omits the specific examples T5 and BART and only mentions machine translation instead of summarization and translation, while inaccurately identifying the Transformer architecture as an encoder-decoder model.",
+          "reason": "The actual answer provides one example (The Transformer) and mentions sequence-to-sequence tasks such as machine translation, but omits the examples of T5 and BART and the task of summarization.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
           "id": "eval_022",
           "grade": "partial",
-          "reason": "The actual answer omits the specific citation (Kaplan et al., 2020) that is critical to the expected answer and adds extraneous information about compute-optimal training not present in the expected answer.",
+          "reason": "The actual answer captures the power law phenomenon described in the expected answer but omits the authors (Kaplan et al. 2020) and adds extra information about compute-optimal training.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
           "id": "eval_023",
           "grade": "incorrect",
-          "reason": "The actual answer misrepresents the key finding of the Chinchilla paper as the under-training issue, whereas the key finding is the compute-optimal recipe (approximately 20 tokens per model parameter) that the paper established. The Chinchilla paper (Hoffmann et al., 2022) specifically identifies the recipe for efficient training as its core contribution, not merely the observation that previous models were under-trained.",
+          "reason": "The actual answer describes a problem (under-training of previous models) as the key finding, but the expected answer specifies the compute-optimal recipe (20 tokens per model parameter) as the key finding.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
@@ -183,6 +176,20 @@
           "citation_precision": null
         },
         {
+          "id": "eval_028",
+          "grade": "partial",
+          "reason": "The actual answer omits the critical comparison with fixed sinusoidal encodings that the expected answer specifies as part of the relationship.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
+          "id": "eval_030",
+          "grade": "incorrect",
+          "reason": "The actual answer states that the provided sources do not mention any masking pattern, whereas the expected answer explicitly states that encoder layers use self-attention without masking.",
+          "citations_ok": false,
+          "citation_precision": 0.0
+        },
+        {
           "id": "eval_035",
           "grade": "incorrect",
           "reason": "incorrectly declined an answerable question",
@@ -192,14 +199,14 @@
         {
           "id": "eval_037",
           "grade": "partial",
-          "reason": "The actual answer states the general category of sequence-to-sequence tasks but omits the specific example of machine translation, which is a key detail in the expected answer.",
+          "reason": "The actual answer omits the specific example of machine translation, which is a key detail in the expected answer.",
           "citations_ok": true,
           "citation_precision": 1.0
         },
         {
           "id": "eval_038",
           "grade": "partial",
-          "reason": "The actual answer omits the important detail that the Transformer's dominance extends beyond natural language processing to other domains.",
+          "reason": "The actual answer only mentions natural language processing while the expected answer explicitly includes domains beyond natural language processing.",
           "citations_ok": true,
           "citation_precision": 1.0
         },
@@ -214,46 +221,53 @@
     },
     "multi_hop": {
       "count": 7,
-      "correct": 2,
-      "partial": 3,
-      "incorrect": 2,
-      "accuracy": 0.5,
-      "citation_checked": 7,
-      "citation_all_correct": 1,
-      "citation_precision": 0.1429,
+      "correct": 1,
+      "partial": 2,
+      "incorrect": 4,
+      "accuracy": 0.2857,
+      "citation_checked": 5,
+      "citation_all_correct": 0,
+      "citation_precision": 0.0,
       "failures": [
         {
           "id": "eval_040",
           "grade": "incorrect",
-          "reason": "The actual answer incorrectly states the Transformer architecture is primarily for sequence-to-sequence tasks without acknowledging that encoder-only models handle understanding tasks and decoder-only models dominate generation tasks.",
+          "reason": "The actual answer incorrectly states that the Transformer architecture is primarily for sequence-to-sequence tasks without acknowledging the existence of encoder-only models for understanding and decoder-only models for generation.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
-          "id": "eval_041",
+          "id": "eval_042",
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
+        {
+          "id": "eval_043",
           "grade": "partial",
-          "reason": "The actual answer lists the techniques but omits examples and the generalization benefit mentioned in the expected answer.",
+          "reason": "The actual answer states that RoPE generalizes better to long sequences but omits the specific limitation of fixed positional encodings (i.e., they cannot extrapolate beyond training length) that is critical to the expected answer.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
           "id": "eval_045",
           "grade": "partial",
-          "reason": "The actual answer omits the critical detail about compute-optimal training allocating equal resources to model size and data tokens, which is a key finding in the expected answer.",
+          "reason": "The actual answer omits the critical detail about compute-optimal training allocating equal resources to model size and data tokens, which is a key component of the expected answer.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
           "id": "eval_046",
-          "grade": "partial",
-          "reason": "The actual answer omits the comparative phrase 'than previous large models' which is a key detail in the expected answer.",
-          "citations_ok": false,
-          "citation_precision": 0.0
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
         },
         {
           "id": "eval_050",
           "grade": "incorrect",
-          "reason": "The actual answer discusses dimension ratios in transformer models without explaining how attention logits scale with embedding dimension via dot products or the necessity of the 1/sqrt(d_k) scaling factor.",
+          "reason": "The actual answer discusses dimension ratios in transformer architectures without explaining how attention logits scale via dot products and the necessity of the 1/sqrt(d_k) scaling factor, which are central to the expected answer.",
           "citations_ok": false,
           "citation_precision": 0.0
         }
@@ -261,14 +275,21 @@
     },
     "unanswerable": {
       "count": 10,
-      "correct": 7,
+      "correct": 6,
       "partial": 0,
-      "incorrect": 3,
-      "accuracy": 0.7,
+      "incorrect": 4,
+      "accuracy": 0.6,
       "citation_checked": 0,
       "citation_all_correct": 0,
       "citation_precision": null,
       "failures": [
+        {
+          "id": "eval_unanswerable_005",
+          "grade": "declined_incorrect",
+          "reason": "failed to decline \u2014 should have declined this unanswerable question",
+          "citations_ok": true,
+          "citation_precision": null
+        },
         {
           "id": "eval_unanswerable_008",
           "grade": "declined_incorrect",
