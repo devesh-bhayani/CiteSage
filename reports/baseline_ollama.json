@@ -1,13 +1,13 @@
 {
-  "timestamp": "2026-07-17T09:54:31.426143+00:00",
+  "timestamp": "2026-07-17T17:21:10.416275+00:00",
   "total_queries": 65,
   "items_completed": 65,
   "aggregate": {
-    "accuracy": 0.6077,
-    "citation_precision": 0.35,
-    "citation_all_correct_rate": 0.2889,
+    "accuracy": 0.7,
+    "citation_precision": 0.2507,
+    "citation_all_correct_rate": 0.1837,
     "decline_recall": 0.6,
-    "decline_precision": 0.375
+    "decline_precision": 0.5
   },
   "targets": {
     "accuracy": 0.85,
@@ -22,36 +22,36 @@
     "p95_latency_ms": false
   },
   "latency": {
-    "p50_ms": 7021.0,
-    "p95_ms": 112193.9
+    "p50_ms": 7542.9,
+    "p95_ms": 123669.5
   },
   "token_usage": {
-    "total_input_tokens": 65250,
-    "total_output_tokens": 107966,
-    "average_per_query": 2664.9
+    "total_input_tokens": 80938,
+    "total_output_tokens": 80343,
+    "average_per_query": 2481.2
   },
   "cost": {
     "total_usd": 0.0,
     "avg_cost_per_query": 0.0
   },
-  "fast_path_ratio": 0.4923,
+  "fast_path_ratio": 0.6462,
   "by_category": {
     "ambiguous": {
       "count": 6,
-      "correct": 2,
-      "partial": 1,
+      "correct": 1,
+      "partial": 2,
       "incorrect": 3,
-      "accuracy": 0.4167,
+      "accuracy": 0.3333,
       "citation_checked": 3,
       "citation_all_correct": 0,
-      "citation_precision": 0.1667,
+      "citation_precision": 0.0667,
       "failures": [
         {
           "id": "eval_048",
           "grade": "partial",
-          "reason": "The actual answer confirms Transformers can handle variable-length sequences but omits the specific detail about context length being a variable hyperparameter ranging from 512 to 1M+ tokens as stated in the expected answer.",
+          "reason": "The actual answer confirms that the Transformer can handle variable-length sequences, which aligns with the core answer to the question. However, it omits the specific context length range (512 to 1M+",
           "citations_ok": false,
-          "citation_precision": 0.5
+          "citation_precision": 0.2
         },
         {
           "id": "eval_ambiguous_001",
@@ -73,32 +73,39 @@
           "reason": "incorrectly declined an answerable question",
           "citations_ok": true,
           "citation_precision": null
+        },
+        {
+          "id": "eval_ambiguous_004",
+          "grade": "partial",
+          "reason": "The actual answer covers the typical ranges for d_model, n_heads, n_layers and the ratio d_ff/d_model \u2248 4 but omits the ratio d_k = d_model/n_heads.",
+          "citations_ok": false,
+          "citation_precision": 0.0
         }
       ]
     },
     "exact_term": {
       "count": 9,
       "correct": 5,
-      "partial": 1,
-      "incorrect": 3,
-      "accuracy": 0.6111,
-      "citation_checked": 7,
-      "citation_all_correct": 2,
-      "citation_precision": 0.2857,
+      "partial": 3,
+      "incorrect": 1,
+      "accuracy": 0.7222,
+      "citation_checked": 8,
+      "citation_all_correct": 0,
+      "citation_precision": 0.0625,
       "failures": [
         {
           "id": "eval_019",
-          "grade": "incorrect",
-          "reason": "The actual answer does not provide any examples of encoder-only models and instead states a lack of information in the provided documents, which completely misses the point of the question and fails to match the expected answer.",
+          "grade": "partial",
+          "reason": "The actual answer correctly identifies BERT as an encoder-only model but omits RoBERTa, a key example in the expected answer.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
           "id": "eval_020",
-          "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
+          "grade": "partial",
+          "reason": "The actual answer provides only one example (GPT) while the expected answer lists three examples (GPT, LLaMA, and Claude).",
+          "citations_ok": false,
+          "citation_precision": 0.0
         },
         {
           "id": "eval_025",
@@ -118,13 +125,13 @@
     },
     "factual_lookup": {
       "count": 33,
-      "correct": 20,
-      "partial": 7,
-      "incorrect": 6,
-      "accuracy": 0.7121,
-      "citation_checked": 30,
-      "citation_all_correct": 11,
-      "citation_precision": 0.4417,
+      "correct": 26,
+      "partial": 4,
+      "incorrect": 3,
+      "accuracy": 0.8485,
+      "citation_checked": 32,
+      "citation_all_correct": 9,
+      "citation_precision": 0.362,
       "failures": [
         {
           "id": "eval_006",
@@ -141,25 +148,18 @@
           "citation_precision": 0.0
         },
         {
-          "id": "eval_018",
-          "grade": "incorrect",
-          "reason": "The actual answer states that the provided documents lack the necessary information to answer the question, whereas the expected answer provides a detailed explanation of the difference between encoder-only and decoder-only models.",
-          "citations_ok": false,
-          "citation_precision": 0.0
-        },
-        {
           "id": "eval_021",
-          "grade": "partial",
-          "reason": "The actual answer provides one example (The Transformer) and mentions sequence-to-sequence tasks such as machine translation, but omits the examples of T5 and BART and the task of summarization.",
+          "grade": "incorrect",
+          "reason": "The actual answer states that the provided documents lack information on encoder-decoder models and their applications, whereas the expected answer provides specific examples (T5 and BART) and their best-suited tasks (summarization and translation)",
           "citations_ok": false,
           "citation_precision": 0.0
         },
         {
           "id": "eval_022",
-          "grade": "partial",
-          "reason": "The actual answer captures the power law phenomenon described in the expected answer but omits the authors (Kaplan et al. 2020) and adds extra information about compute-optimal training.",
-          "citations_ok": false,
-          "citation_precision": 0.0
+          "grade": "incorrect",
+          "reason": "incorrectly declined an answerable question",
+          "citations_ok": true,
+          "citation_precision": null
         },
         {
           "id": "eval_023",
@@ -167,41 +167,6 @@
           "reason": "The actual answer describes a problem (under-training of previous models) as the key finding, but the expected answer specifies the compute-optimal recipe (20 tokens per model parameter) as the key finding.",
           "citations_ok": false,
           "citation_precision": 0.0
-        },
-        {
-          "id": "eval_027",
-          "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
-        },
-        {
-          "id": "eval_028",
-          "grade": "partial",
-          "reason": "The actual answer omits the critical comparison with fixed sinusoidal encodings that the expected answer specifies as part of the relationship.",
-          "citations_ok": false,
-          "citation_precision": 0.0
-        },
-        {
-          "id": "eval_030",
-          "grade": "incorrect",
-          "reason": "The actual answer states that the provided sources do not mention any masking pattern, whereas the expected answer explicitly states that encoder layers use self-attention without masking.",
-          "citations_ok": false,
-          "citation_precision": 0.0
-        },
-        {
-          "id": "eval_035",
-          "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
-        },
-        {
-          "id": "eval_037",
-          "grade": "partial",
-          "reason": "The actual answer omits the specific example of machine translation, which is a key detail in the expected answer.",
-          "citations_ok": true,
-          "citation_precision": 1.0
         },
         {
           "id": "eval_038",
@@ -212,20 +177,20 @@
         },
         {
           "id": "eval_049",
-          "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
+          "grade": "partial",
+          "reason": "The actual answer describes dropout's role in preventing co-adaptation and promoting robust representations but omits the typical values (0.0 to 0.3) specified in the expected answer.",
+          "citations_ok": false,
+          "citation_precision": 0.0
         }
       ]
     },
     "multi_hop": {
       "count": 7,
-      "correct": 1,
+      "correct": 2,
       "partial": 2,
-      "incorrect": 4,
-      "accuracy": 0.2857,
-      "citation_checked": 5,
+      "incorrect": 3,
+      "accuracy": 0.4286,
+      "citation_checked": 6,
       "citation_all_correct": 0,
       "citation_precision": 0.0,
       "failures": [
@@ -238,15 +203,8 @@
         },
         {
           "id": "eval_042",
-          "grade": "incorrect",
-          "reason": "incorrectly declined an answerable question",
-          "citations_ok": true,
-          "citation_precision": null
-        },
-        {
-          "id": "eval_043",
           "grade": "partial",
-          "reason": "The actual answer states that RoPE generalizes better to long sequences but omits the specific limitation of fixed positional encodings (i.e., they cannot extrapolate beyond training length) that is critical to the expected answer.",
+          "reason": "The actual answer omits the specific roles of query and key vectors (what they represent) and the critical computation steps (dot product, unnormalized logits, and softmax) that define how attention weights are derived.",
           "citations_ok": false,
           "citation_precision": 0.0
         },
@@ -267,7 +225,7 @@
         {
           "id": "eval_050",
           "grade": "incorrect",
-          "reason": "The actual answer discusses dimension ratios in transformer architectures without explaining how attention logits scale via dot products and the necessity of the 1/sqrt(d_k) scaling factor, which are central to the expected answer.",
+          "reason": "The actual answer states that the provided sources do not mention how attention logits scale with embedding dimension, whereas the expected answer provides a detailed technical explanation of this scaling mechanism.",
           "citations_ok": false,
           "citation_precision": 0.0
         }
