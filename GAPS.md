@@ -33,11 +33,13 @@
 
 **Follow-up (separate from this fix, needs its own decision):** `retrieval.bm25_top_k` / `vector_top_k` (20 each) and `rerank_candidates` (15) in `config.yaml` were never tuned against a real multi-document corpus — they were sized when 4 chunks was the entire corpus. Whether to raise them (more recall headroom, more reranker cost) or leave them (representative of a real deployment's retrieval budget) is a tuning call, not a bug fix — don't silently change these without re-running eval to check the effect, per the "don't retune thresholds against a noisy metric" lesson from GAPS.md #1. A full 65-query LLM eval against this new corpus has **not** been run yet; `reports/baseline_ollama.json` still reflects the old 4-chunk corpus and should not be compared against a future run on this expanded one.
 
-## 3. BM25 pickle + Chroma client reconstructed on every query
+## 3. ~~BM25 pickle + Chroma client reconstructed on every query~~ — FIXED 2026-07-18
 
-**What:** `retrieve_node` (`src/citesage/graph/nodes.py:145`) builds `Retriever()` per query → `ChromaStore()` (new PersistentClient) + `BM25Index.load()` (full pickle deserialize from disk) every single query. Same anti-pattern that caused the model-reload OOM (fixed in `83bee9f`) — models are now cached, the stores are not.
-**Why it matters:** Wasted latency on the p50 path and per-query allocation churn; grows with corpus size (gap #2's fix makes this worse).
-**Fix (scoped):** Add a module-level `@lru_cache` `_get_retriever()` in `graph/nodes.py` (mirroring `_load_cross_encoder`), use it in `retrieve_node`. Invalidate cache on ingest (call `.cache_clear()` from `IngestPipeline` or accept staleness with a `# ponytail:`-style note). One file + one test.
+**What it was:** `retrieve_node` builds `Retriever()` per query → new `chromadb.PersistentClient` + full BM25 pickle deserialize from disk, every single query. Same anti-pattern that caused the model-reload OOM (`83bee9f`).
+
+**Fix shipped:** Cached at the storage layer (`src/citesage/ingestion/storage.py`), NOT by caching the `Retriever` object — integration tests patch `nodes.Retriever` at ~10 sites and rely on per-call construction, so a cached Retriever would freeze mocks. Instead: `_get_chroma_client(path)` (`lru_cache`) and an mtime-tagged `_BM25_CACHE` — `BM25Index.load()` stats the file and reuses the cached instance only when mtime matches, so a re-ingest from *another process* (CLI ingest while the API serves) is picked up automatically; in-process `save()` refreshes the entry. The empty/missing-file case is never cached.
+
+**Verified:** warm `Retriever()` construction 6.8 s → **~2 ms**; coherence script covers load-after-save freshness, external-rewrite detection (mtime bump → reload), and missing-file behavior; 175 tests pass. (One test-script false alarm worth remembering: a 2-doc BM25 corpus gives IDF = ln(1) = 0 for a term in 1 of 2 docs — all scores zero. Use ≥3 docs when sanity-checking BM25.)
 
 ## 4. `max_tokens` silently ignored on Ollama
 
@@ -46,11 +48,9 @@
 **Correction (2026-06-15):** the original advice here — "bundle with gap #1, pass `num_predict` in the options dict" — is **wrong and must not be followed**. While fixing #1 it turned out qwen3 models emit reasoning *before* their answer, so honouring `max_tokens=16` from the citation judge would truncate mid-reasoning and destroy the YES/NO/PARTIAL verdict. `max_tokens` being ignored is what currently keeps the judge working.
 **Fix (scoped):** Do NOT pass `num_predict`. Instead make the contract honest: drop the unused `num_predict` parameter from `OllamaLLM.__init__`, and document in the class docstring that token caps are not honoured on Ollama because thinking models need headroom. If a cap is ever genuinely needed, size it well above the reasoning budget (hundreds, not 16) and re-verify the judge still returns a verdict.
 
-## 5. No CI at all, despite CI-shaped tooling
+## 5. ~~No CI at all~~ — FIXED 2026-07-18
 
-**What:** No `.github/` directory. Yet `run_eval` returns exit 1 on missed targets, `check_regression.py` exists "(used in CI)" per README, and pre-commit hooks are configured.
-**Why it matters:** 149 tests only run when someone remembers; the regression gate has no enforcement point; the README overclaims.
-**Fix (scoped):** Add one `.github/workflows/test.yml`: checkout, `uv sync`, `pytest tests/unit tests/integration`. Skip the eval job (needs Ollama/credits). ~30 lines.
+**Fix shipped:** `.github/workflows/test.yml` — ubuntu, uv (cached), ruff + black check, then `pytest tests/unit tests/integration` (175 tests; LLM calls stubbed). HuggingFace model cache keyed on config.yaml. The eval job is deliberately excluded (needs a live Ollama daemon or funded Anthropic credits — noted in the workflow). First green run on GitHub not yet observed — check the Actions tab after the next push; the lockfile was resolved on Windows, so a Linux-only dependency hiccup on first run is the most likely failure mode.
 
 ## 6. Four copies of LLM retry logic; two copies of `_format_sources` and `_merge_usage`
 
@@ -66,9 +66,9 @@
 
 ## 8. Untested critical paths
 
-**What:** No unit tests for: `retrieval/reranker.py` (threshold/skip_threshold behavior), `retrieval/retriever.py` (where-filtering, `_matches_where`), `utils/llm_factory.py` (provider dispatch, Ollama error mapping, `</think>` stripping), `evaluation/run_eval.py` metric math (`check_citations`, `compute_metrics`, `_parse_grade_response`), `graph/nodes.py:_parse_grade_indices`. Existing tests cover chunker, RRF, citation verifier, config, cost tracker, and stubbed graph routing/API.
-**Why it matters:** The two metric functions define the project's success criteria — a regression there was already shipped once (boolean citation precision bug, fixed in Phase 3 tuning). The `</think>`-stripping and grade-parsing code paths are the fragile text-munging kind.
-**Fix (scoped):** One new file `tests/unit/test_eval_metrics.py` covering `check_citations` + `_parse_grade_response` + `_parse_grade_indices` with table-driven cases (~15 cases). Highest value per line of any fix here. A second session can add `test_llm_factory.py` with a fake ollama client.
+**What:** No unit tests for: `retrieval/reranker.py` (threshold/skip_threshold behavior), `retrieval/retriever.py` (where-filtering, `_matches_where`), `utils/llm_factory.py` (provider dispatch, Ollama error mapping, `</think>` stripping), `evaluation/run_eval.py:compute_metrics`. Existing tests cover chunker, RRF, citation verifier, config, cost tracker, and stubbed graph routing/API.
+**Partially fixed 2026-07-18:** `tests/unit/test_eval_metrics.py` (26 table-driven cases) now covers `check_citations` (incl. a regression test for the historic boolean-precision bug), `_parse_grade_response`, and `_parse_grade_indices` (incl. the `'["1"]'`-parses-to-`[]` sharp edge, documented as current behavior with guidance not to delete it).
+**Remaining (scoped):** `test_llm_factory.py` with a fake ollama client (provider dispatch, `OllamaConnectionError` mapping, `</think>` strip), and cases for `compute_metrics` aggregation.
 
 ## 9. Security (all LOW severity in the local-dev context, flag before any real deployment)
 

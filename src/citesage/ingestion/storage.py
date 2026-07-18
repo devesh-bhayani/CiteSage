@@ -34,6 +34,19 @@ def _load_embedder(name: str) -> SentenceTransformer:
     return SentenceTransformer(name)
 
 
+@lru_cache(maxsize=None)
+def _get_chroma_client(path: str) -> chromadb.PersistentClient:
+    """Create (and cache) a ChromaDB persistent client per path.
+
+    ``retrieve_node`` constructs a fresh ``Retriever`` → ``ChromaStore`` every
+    query; without this cache a new PersistentClient was built each time.
+    One client per path is shared process-wide — upserts through it are
+    immediately visible to queries, so no invalidation is needed.
+    """
+    Path(path).mkdir(parents=True, exist_ok=True)
+    return chromadb.PersistentClient(path=path)
+
+
 # ---------------------------------------------------------------------------
 # ChromaDB vector store
 # ---------------------------------------------------------------------------
@@ -50,9 +63,8 @@ class ChromaStore:
     def __init__(self, persist_dir: str | None = None) -> None:
         settings = get_settings()
         path = persist_dir or settings.paths.chroma_db
-        Path(path).mkdir(parents=True, exist_ok=True)
 
-        self._client = chromadb.PersistentClient(path=path)
+        self._client = _get_chroma_client(str(path))
         self._embedder = _load_embedder(settings.models.embedder)
         self._collection = self._client.get_or_create_collection(
             name=self.COLLECTION_NAME,
@@ -145,6 +157,15 @@ class ChromaStore:
 # BM25 keyword index
 # ---------------------------------------------------------------------------
 
+# Loaded BM25 indexes keyed by resolved index path, valued as
+# (file mtime_ns, instance). ``retrieve_node`` builds a fresh ``Retriever`` →
+# ``BM25Index.load()`` every query; without this cache the full pickle was
+# deserialized from disk per query. The mtime tag keeps the cache coherent
+# even when another process rewrites the index (e.g. CLI ingest while the API
+# server is running): a changed mtime forces a reload, at the cost of one
+# stat() per query.
+_BM25_CACHE: dict[str, tuple[int, "BM25Index"]] = {}
+
 
 class BM25Index:
     """In-memory BM25Okapi index persisted to disk via pickle.
@@ -195,7 +216,12 @@ class BM25Index:
         self._rebuild()
 
     def save(self) -> None:
-        """Serialise the current index and chunk list to disk."""
+        """Serialise the current index and chunk list to disk.
+
+        Also refreshes the process-wide load cache for this path, so
+        subsequent ``BM25Index.load()`` calls (e.g. from a query after an
+        ingest) return this up-to-date instance instead of stale state.
+        """
         self._path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "chunks": self._chunks,
@@ -203,6 +229,10 @@ class BM25Index:
         }
         with open(self._path, "wb") as fh:
             pickle.dump(payload, fh, protocol=pickle.HIGHEST_PROTOCOL)
+        _BM25_CACHE[str(self._path.resolve())] = (
+            self._path.stat().st_mtime_ns,
+            self,
+        )
 
     # ------------------------------------------------------------------
     # Loading
@@ -210,17 +240,30 @@ class BM25Index:
 
     @classmethod
     def load(cls, index_path: str | None = None) -> "BM25Index":
-        """Load a persisted index from disk.  Returns an empty index if the
-        file does not yet exist."""
+        """Load a persisted index from disk, reusing a process-wide cache.
+
+        The cache entry is tagged with the index file's mtime: a matching
+        mtime returns the cached instance without touching the pickle, while
+        a changed mtime (another process re-ingested) forces a fresh
+        deserialize. Returns an empty index if the file does not yet exist
+        (never cached, so the index is picked up as soon as one is written).
+        """
         instance = cls(index_path)
+        key = str(instance._path.resolve())
         if not instance._path.exists():
+            _BM25_CACHE.pop(key, None)
             return instance
+        mtime = instance._path.stat().st_mtime_ns
+        cached = _BM25_CACHE.get(key)
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
         with open(instance._path, "rb") as fh:
             payload = pickle.load(fh)
         instance._chunks = payload["chunks"]
         corpus = payload["corpus"]
         if corpus:
             instance._index = BM25Okapi(corpus)
+        _BM25_CACHE[key] = (mtime, instance)
         return instance
 
     # ------------------------------------------------------------------
