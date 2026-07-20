@@ -31,7 +31,9 @@
 
 **New finding surfaced by this fix (not a regression — this is the corpus finally being large enough to reveal it):** across the 55 answerable golden questions, the expected source chunk reaches the reranker's candidate pool (top-15, post RRF fusion) only **80%** of the time (44/55), and survives into the final top-5 handed to generation only **58%** of the time (32/55). With the old 4-chunk corpus this was ~100% by construction, which is exactly why the old baseline's citation/accuracy numbers couldn't be trusted as retrieval quality signal.
 
-**Follow-up (separate from this fix, needs its own decision):** `retrieval.bm25_top_k` / `vector_top_k` (20 each) and `rerank_candidates` (15) in `config.yaml` were never tuned against a real multi-document corpus — they were sized when 4 chunks was the entire corpus. Whether to raise them (more recall headroom, more reranker cost) or leave them (representative of a real deployment's retrieval budget) is a tuning call, not a bug fix — don't silently change these without re-running eval to check the effect, per the "don't retune thresholds against a noisy metric" lesson from GAPS.md #1. A full 65-query LLM eval against this new corpus has **not** been run yet; `reports/baseline_ollama.json` still reflects the old 4-chunk corpus and should not be compared against a future run on this expanded one.
+**Follow-up — RESOLVED 2026-07-20, see gap #13.** The tuning call below was made with an offline sweep (`scripts/retrieval_recall.py`): `rerank_candidates` 15 → 20, everything else unchanged. The sweep also showed the knobs are not the real constraint — the cross-encoder is. Original text kept for context:
+
+`retrieval.bm25_top_k` / `vector_top_k` (20 each) and `rerank_candidates` (15) in `config.yaml` were never tuned against a real multi-document corpus — they were sized when 4 chunks was the entire corpus. Whether to raise them (more recall headroom, more reranker cost) or leave them (representative of a real deployment's retrieval budget) is a tuning call, not a bug fix — don't silently change these without re-running eval to check the effect, per the "don't retune thresholds against a noisy metric" lesson from GAPS.md #1. A full 65-query LLM eval against this new corpus has **not** been run yet; `reports/baseline_ollama.json` still reflects the old 4-chunk corpus and should not be compared against a future run on this expanded one.
 
 ## 3. ~~BM25 pickle + Chroma client reconstructed on every query~~ — FIXED 2026-07-18
 
@@ -101,3 +103,46 @@
 **What:** `BUDGET_CAP_USD = 2.0` stops the run when cumulative cost hits the cap — but Ollama pricing is configured as $0, so the cap never triggers locally. Harmless today; on Anthropic the cap will stop a full 65-query run mid-flight if Sonnet pricing makes a run cost >$2 (plausible: ~2.7k tokens/query avg).
 **Why it matters:** The first funded Anthropic run may silently stop early and produce a partial report that reads like a full one (`items_completed` < `total_queries` is recorded, but the summary doesn't shout).
 **Fix (scoped):** Before the Anthropic run: estimate cost (65 × avg tokens × Sonnet pricing), pass `--budget` explicitly, and add a loud `*** PARTIAL RUN ***` banner to `print_summary` when `items_completed < total_queries`. ~10 lines.
+
+## 13. The cross-encoder reranker is the retrieval ceiling — and its scores don't separate answerable from unanswerable (NEW 2026-07-20, HIGH)
+
+**What:** Measured offline with `scripts/retrieval_recall.py` over the 55 answerable golden questions (no LLM calls; BM25/vector rankings and cross-encoder scores precomputed per question, so configs are compared by re-slicing).
+
+Retrieval reaches the right chunk; the reranker then throws it away. With `rerank_candidates: 20`, the expected chunk is in the candidate pool **84%** of the time but survives into the final top-5 only **60%** of the time. Where `ms-marco-MiniLM-L-6-v2` ranks the correct chunk across the whole 34-chunk corpus:
+
+| CE rank of correct chunk | share |
+|---|---|
+| 1 | 29% |
+| 2–5 | 29% (→ 58% reach top-5) |
+| 6–15 | 18% |
+| **16+ (below half the corpus)** | **24%** |
+
+Final top-5 recall equals the reranker's own top-5 rate almost exactly — fusion and pool size are not the binding constraint. Miss classification at the tuned config: **13 rerank-drop, 8 both-miss, 1 rrf-dilution.**
+
+**Why the config knobs can't fix it:** the sweep raised pool recall to 87% (candidates 30, bm25/vector 30) and final recall still sat at 60% — the cross-encoder re-buries the chunk regardless of what it is handed. `rerank_top_k` 5 → 7 does lift final recall to 64%, but it adds two more distractor slots to the generation context, which works directly against citation precision (the metric this was meant to rescue). Not taken.
+
+**Reranker bake-off (offline, same 55 questions, pool held at 20):**
+
+| model | final top-5 recall | rerank 20 candidates (CPU) |
+|---|---|---|
+| `ms-marco-MiniLM-L-6-v2` (current) | 60% | **385 ms** |
+| `ms-marco-MiniLM-L-12-v2` | 62% | — |
+| `BAAI/bge-reranker-base` | 53% (worse) | — |
+| `BAAI/bge-reranker-v2-m3` | **71%** | **12,860 ms** |
+
+**Why the obvious upgrade is rejected:** `bge-reranker-v2-m3` is the only model that meaningfully beats the incumbent (+11pp), but at 12.9 s to rerank 20 candidates on CPU it is 33× slower than L-6 and **2.5× the entire 5 s p95 target on its own, before a single LLM token**. The GPU is already contended by Ollama. `L-12` buys +2pp (one question — noise at n=55) for roughly double the compute. So no swap.
+
+**Second finding, arguably worse:** cross-encoder scores barely separate answerable from unanswerable questions, which is the root cause of decline-recall 60% — not a bad threshold value. Top-1 score distributions:
+
+| model | answerable top-1 (p25 / med) | unanswerable top-1 (p25 / med / max) |
+|---|---|---|
+| ms-marco L-6 | 0.535 / 2.518 | -3.310 / **-2.797** / 2.860 |
+| bge-v2-m3 | 0.841 / 0.923 | 0.220 / 0.441 / 0.933 |
+
+Unanswerable top-1 has median **-2.797** against a `decline_threshold` of **-2.5**, so roughly half of unanswerable questions score above the gate and are never auto-declined. This is *not* threshold-tunable: answerable p25 (0.535) sits below unanswerable max (2.860), so any gate strict enough to catch the leakers false-declines a large slice of answerable questions — exactly the -3.0 → -2.5 oscillation already recorded in `config.yaml`. Both models leak 1/10 unanswerable above the answerable median, so **bge buys recall, not discrimination**.
+
+**Fix (scoped, none of it cheap — this is a "know the ceiling" entry, not a quick win):**
+- Accept ~60% final recall as the local-CPU ceiling and stop tuning retrieval knobs against it.
+- If a GPU is ever free: re-time `bge-reranker-v2-m3` on CUDA; +11pp recall is worth real money if it fits the latency budget there.
+- Decline routing needs a signal that isn't the cross-encoder score (the LLM grader already exists for this) — treat `decline_threshold` as a coarse pre-filter, not the decision.
+- Do not read a citation-precision change after this commit as a retrieval win: `rerank_candidates` 15 → 20 changes the *pool*, not what generation sees.

@@ -4,7 +4,7 @@ Pipeline (per retrieval CLAUDE.md):
     BM25 top_k=20 + Vector top_k=20
         → RRF fusion (k=60)
         → dedup by chunk_id          ← implicit in rrf_fuse()
-        → take top rerank_candidates (default 15) for the cross-encoder
+        → take top rerank_candidates (default 20) for the cross-encoder
         → rerank → return top rerank_top_k (default 5)
 
 Logged per query: bm25_count, vector_count, overlap_count, rerank_scores,

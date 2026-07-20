@@ -23,7 +23,12 @@ retrieval:
   vector_top_k: 20
   bm25_top_k: 20
   # How many RRF-fused candidates to feed into the cross-encoder.
-  rerank_candidates: 15
+  # 15 -> 20 (Phase 2 sweep, scripts/retrieval_recall.py): recovers the
+  # rrf-dilution misses, pool recall 78% -> 84% over the 55 answerable golden
+  # questions. Costs ~5 extra cross-encoder pairs (~95ms); does NOT change how
+  # many chunks reach generation, so it adds no distractors. Raising it further
+  # (25/30) buys ~1pp of pool recall and nothing at all in final recall.
+  rerank_candidates: 20
   # Final number of results returned to the generation layer.
   rerank_top_k: 5
   rrf_k: 60

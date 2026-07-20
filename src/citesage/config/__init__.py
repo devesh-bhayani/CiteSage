@@ -52,7 +52,7 @@ class RetrievalConfig(BaseModel):
     vector_top_k: int
     bm25_top_k: int
     # Number of RRF-fused candidates fed to the cross-encoder.
-    rerank_candidates: int = 15
+    rerank_candidates: int = 20
     # Final number of results returned after reranking.
     rerank_top_k: int
     rrf_k: int
