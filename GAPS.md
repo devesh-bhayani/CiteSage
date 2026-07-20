@@ -141,6 +141,10 @@ Final top-5 recall equals the reranker's own top-5 rate almost exactly — fusio
 
 Unanswerable top-1 has median **-2.797** against a `decline_threshold` of **-2.5**, so roughly half of unanswerable questions score above the gate and are never auto-declined. This is *not* threshold-tunable: answerable p25 (0.535) sits below unanswerable max (2.860), so any gate strict enough to catch the leakers false-declines a large slice of answerable questions — exactly the -3.0 → -2.5 oscillation already recorded in `config.yaml`. Both models leak 1/10 unanswerable above the answerable median, so **bge buys recall, not discrimination**.
 
+**Confirmed end-to-end 2026-07-20 (this is the useful part).** A full deterministic 65/65 Ollama eval with `rerank_candidates: 20` reproduced the previous baseline almost exactly — accuracy **70.0% → 70.0%**, decline recall **60.0% → 60.0%**, citation precision **25.07% → 25.17%**, and *every* per-category accuracy identical to three decimals (ambiguous 0.333, exact_term 0.722, factual_lookup 0.849, multi_hop 0.429, unanswerable 0.600). p95 122.8 s vs 123.7 s, fast-path ratio unchanged at 0.646.
+
+That null is the evidence, not a disappointment: pool recall rose 78% → 84% and **nothing downstream moved at all**, because the extra chunks entering the candidate pool are re-buried by the cross-encoder before they ever reach generation. Retrieval breadth is not the constraint — the reranker is. Any future work that tunes `bm25_top_k` / `vector_top_k` / `rerank_candidates` and reports a metric change should be treated as suspect until the reranker itself changes.
+
 **Fix (scoped, none of it cheap — this is a "know the ceiling" entry, not a quick win):**
 - Accept ~60% final recall as the local-CPU ceiling and stop tuning retrieval knobs against it.
 - If a GPU is ever free: re-time `bge-reranker-v2-m3` on CUDA; +11pp recall is worth real money if it fits the latency budget there.
