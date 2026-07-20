@@ -31,6 +31,17 @@ dependencies = [
     "uvicorn>=0.42.0",
 ]
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# src-layout: the importable package is src/citesage. Without a [build-system]
+# `uv sync` treats this as a virtual project and never installs citesage, so a
+# fresh clone (and CI) fails with ModuleNotFoundError on every `import
+# citesage` — local dev only worked because of a manual editable install.
+[tool.hatch.build.targets.wheel]
+packages = ["src/citesage"]
+
 [dependency-groups]
 dev = [
     "black>=26.3.1",
