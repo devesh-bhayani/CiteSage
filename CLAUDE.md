@@ -13,6 +13,7 @@ Known issues & scoped fixes: **GAPS.md** (audit ordered by severity — check it
 - Test: `pytest tests/ -v` (149 tests; unit-only: `pytest tests/unit -q`, ~1 min)
 - Eval (full, 40–90 min on Ollama): `python -m citesage.evaluation.run_eval --dataset tests/eval/golden_dataset.json --output reports/baseline_ollama.json --errors reports/baseline_ollama_errors.jsonl`
 - Eval smoke (cheap, do this first): add `--subset 5` or `--category factual_lookup`
+- Cost pre-flight (free, no queries run): `--estimate-cost` — projects spend vs `--budget` from a prior report's tokens; exit 1 = over budget
 - Regression diff: `python -m citesage.evaluation.check_regression --baseline <old> --current <new>`
 - Ingest: `python -m citesage.cli --ingest data/documents/`
 - Query: `python -m citesage.cli "question"`

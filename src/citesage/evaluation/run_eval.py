@@ -685,6 +685,102 @@ def _grade_icon(grade: str) -> str:
     return icons.get(grade, "?")
 
 
+def estimate_cost(report_path: Path, n_queries: int, budget: float) -> int:
+    """Project the cost of a funded run from a prior report's token usage.
+
+    Reads measured token counts from *report_path* (typically the free Ollama
+    baseline), scales them to *n_queries*, and prices them with the currently
+    configured generator and grader models from ``config.yaml``.
+
+    The projection is an upper bound: the report records only total input and
+    output tokens, with no per-model split, so every token is priced at the
+    more expensive generator rate. Real spend will be lower because grading
+    runs on the cheaper grader model.
+
+    Args:
+        report_path: Prior eval report JSON to read ``token_usage`` from.
+        n_queries: Number of queries the funded run will attempt.
+        budget: Budget cap in USD to compare the projection against.
+
+    Returns:
+        Process exit code: 0 if the projection fits the budget, 1 if not.
+    """
+    if not report_path.exists():
+        print(f"[ERROR] No report at {report_path} to estimate from.", file=sys.stderr)
+        return 1
+
+    with open(report_path, encoding="utf-8") as fh:
+        report = json.load(fh)
+
+    usage = report.get("token_usage", {})
+    measured_queries = report.get("items_completed") or 1
+    in_tok = usage.get("total_input_tokens", 0)
+    out_tok = usage.get("total_output_tokens", 0)
+    if not in_tok and not out_tok:
+        print(f"[ERROR] {report_path} records no token usage.", file=sys.stderr)
+        return 1
+
+    per_in = in_tok / measured_queries
+    per_out = out_tok / measured_queries
+    proj_in = per_in * n_queries
+    proj_out = per_out * n_queries
+
+    settings = get_settings()
+    pricing = settings.pricing
+    gen_name = settings.models.generator
+    grader_name = settings.models.grader
+    gen = pricing.get_model(gen_name)
+    grader = pricing.get_model(grader_name)
+
+    print("\n" + "=" * 60)
+    print("  COST ESTIMATE (projection, no queries run)")
+    print("=" * 60)
+    print(f"  Source report   : {report_path}")
+    print(f"  Measured over   : {measured_queries} queries")
+    print(f"  Per query       : {per_in:,.0f} in / {per_out:,.0f} out tokens")
+    print(f"  Projected {n_queries:>3} q : {proj_in:,.0f} in / {proj_out:,.0f} out")
+    print()
+
+    if gen is None:
+        print(f"  [WARN] No pricing configured for generator '{gen_name}'.")
+        print("         Add it under `pricing:` in config.yaml to estimate.")
+        return 1
+
+    worst = (proj_in / 1e6) * gen.input_per_million + (
+        proj_out / 1e6
+    ) * gen.output_per_million
+    print(f"  Upper bound (all tokens at {gen_name}):")
+    print(
+        f"    {proj_in/1e6:.4f}M in x ${gen.input_per_million}/M  +  "
+        f"{proj_out/1e6:.4f}M out x ${gen.output_per_million}/M"
+    )
+    print(f"    = ${worst:.2f}")
+    if grader is not None and grader_name != gen_name:
+        floor = (proj_in / 1e6) * grader.input_per_million + (
+            proj_out / 1e6
+        ) * grader.output_per_million
+        print(f"  Lower bound (all tokens at {grader_name}): ${floor:.2f}")
+    print()
+    print(f"  Budget cap      : ${budget:.2f}")
+    if worst > budget:
+        over = worst / budget if budget else float("inf")
+        print(f"  *** PROJECTED OVER BUDGET ({over:.1f}x) ***")
+        print(
+            f"  A {n_queries}-query run would stop early at ~"
+            f"{int(budget / worst * n_queries)} queries."
+        )
+        print(f"  Raise --budget above ${worst:.2f} or expect a partial run.")
+    else:
+        print(f"  Projected spend fits (${worst:.2f} <= ${budget:.2f}).")
+    print()
+    print("  Caveats: upper bound prices grader tokens at generator rates.")
+    print("  If the source report came from a reasoning model (qwen3 emits")
+    print("  <think> blocks), its output-token count is inflated relative to")
+    print("  what Claude will emit, so the real bill should land lower.")
+    print("=" * 60)
+    return 0 if worst <= budget else 1
+
+
 def _warn_budget(cap: float, spent: float, done: int, total: int) -> None:
     msg = (
         f"\n[WARNING] Budget cap ${cap:.2f} reached after "
@@ -771,12 +867,27 @@ def print_summary(metrics: dict) -> None:
     pss = metrics["passes_targets"]
     lat = metrics["latency"]
 
+    done = metrics["items_completed"]
+    planned = metrics["total_queries"]
+
     print("\n" + "=" * 60)
     print("  PHASE 3 EVALUATION SUMMARY")
     print("=" * 60)
-    print(
-        f"  Queries evaluated : {metrics['items_completed']} / {metrics['total_queries']}"
-    )
+    # A budget-capped run stops early and would otherwise produce a report that
+    # reads exactly like a full one. Shout about it (GAPS.md #12).
+    if done < planned:
+        print()
+        print("  " + "*" * 56)
+        # ASCII only: this banner is the one line that must survive a Windows
+        # cp1252 console, and it is printed before stdout reconfigure applies
+        # in some call paths.
+        print(f"  *** PARTIAL RUN - {done}/{planned} QUERIES COMPLETED ***")
+        print(f"  *** {planned - done} queries never ran. Every metric below is")
+        print("  *** computed over the completed subset ONLY and is NOT")
+        print("  *** comparable to a full-dataset baseline. Do not commit")
+        print("  *** this as a baseline or quote it as a result.")
+        print("  " + "*" * 56)
+    print(f"  Queries evaluated : {done} / {planned}")
     print()
     print("  Metric                 Score    Target  Pass?")
     print("  " + "-" * 54)
@@ -896,6 +1007,19 @@ def _build_parser() -> argparse.ArgumentParser:
         help="USD budget cap; stops early if exceeded",
     )
     p.add_argument(
+        "--estimate-cost",
+        dest="estimate_cost",
+        nargs="?",
+        const="reports/baseline_ollama.json",
+        default=None,
+        metavar="REPORT",
+        help=(
+            "Project the cost of a run against config.yaml pricing using a "
+            "prior report's token usage, then exit without running anything. "
+            "Defaults to reports/baseline_ollama.json."
+        ),
+    )
+    p.add_argument(
         "--ragas",
         action="store_true",
         default=False,
@@ -944,6 +1068,10 @@ def main(argv: list[str] | None = None) -> int:
     if not dataset:
         print("ERROR: no items to evaluate after filtering.", file=sys.stderr)
         return 1
+
+    # Projection only — never touches the pipeline or spends anything.
+    if args.estimate_cost is not None:
+        return estimate_cost(Path(args.estimate_cost), len(dataset), args.budget)
 
     print(f"  Running {len(dataset)} queries...\n")
 

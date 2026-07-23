@@ -98,7 +98,20 @@
 - **VCR/pytest-recording** is a dev dependency and `.gitignore` reserves `tests/fixtures/cassettes/`, but no cassette tests exist.
 **Fix (scoped):** Pick per item: wire `--rebuild` into `cli.py` (10 lines), drop `sse-starlette` until streaming lands.
 
-## 12. Eval budget cap is a no-op on Ollama
+## 12. ~~Eval budget cap is a no-op on Ollama~~ — FIXED 2026-07-23
+
+**Fix shipped:**
+- `--estimate-cost [REPORT]` on `run_eval` projects a funded run from a prior report's measured token usage against `config.yaml` pricing, then exits without touching the pipeline. Exit code 0 = fits the budget, 1 = over, so it works as a pre-flight gate.
+- Loud `*** PARTIAL RUN - n/N QUERIES COMPLETED ***` banner in `print_summary` whenever `items_completed < total_queries`, stating that the metrics cover the completed subset only and must not be committed as a baseline. ASCII-only so it survives a Windows cp1252 console.
+- `tests/unit/test_budget_guard.py` (11 cases) pins both, including the off-by-one (64/65 still warns), the ASCII constraint, and the projection arithmetic. Pricing is stubbed so the budget assertions don't silently skip themselves when the configured provider is free.
+
+**The number Phase 4 existed to produce:** measured from `reports/baseline_ollama.json` (78,452 in / 85,999 out over 65 queries = 1,207 in / 1,323 out per query), a full 65-query Anthropic run projects to **$1.53 upper bound** (all tokens at Sonnet $3/$15 per M) against the **$2.00** cap — it fits, with ~31% headroom. Lower bound at Haiku rates is $0.13; true cost sits between, since generation runs on Sonnet and grading on Haiku.
+
+**Read the headroom carefully before spending:** the upper bound is *not* conservative in every direction. It scales Ollama-measured tokens, and qwen3's output count is inflated by `<think>` reasoning blocks Claude won't emit — that pushes the real bill *down*. But nothing in the projection covers retries (3 attempts per call on failure), RAGAS if `--ragas` is passed, or a prompt change between now and the run — all of which push *up*. $1.53 of a $2.00 cap is not much room for a surprise. Pass `--budget` explicitly and re-run `--estimate-cost` immediately before the funded run rather than trusting this figure.
+
+**Verified:** `--estimate-cost` run against both the live Ollama config (correctly projects $0.00, free models) and a temporarily-swapped Anthropic config (the $1.53 above; config.yaml restored, `git diff` clean afterwards).
+
+**Original finding, for context:**
 
 **What:** `BUDGET_CAP_USD = 2.0` stops the run when cumulative cost hits the cap — but Ollama pricing is configured as $0, so the cap never triggers locally. Harmless today; on Anthropic the cap will stop a full 65-query run mid-flight if Sonnet pricing makes a run cost >$2 (plausible: ~2.7k tokens/query avg).
 **Why it matters:** The first funded Anthropic run may silently stop early and produce a partial report that reads like a full one (`items_completed` < `total_queries` is recorded, but the summary doesn't shout).
