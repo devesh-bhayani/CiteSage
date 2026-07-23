@@ -63,12 +63,14 @@ QUERY (LangGraph state machine — graph/pipeline.py, graph/nodes.py)
 7. **Chunk IDs are SHA-256(text + source_file)** → re-ingesting is idempotent, and the golden dataset can reference stable chunk IDs.
 8. **Eval exits 1 when targets are missed** — it's a CI gate by design. Exit 1 ≠ crash. Check the printed summary/log tail before assuming failure.
 
-## Current quality status (be honest with yourself)
+## Current quality status (be honest with yourself, updated 2026-07-23)
 
-- All 149 tests pass. The pipeline runs end-to-end on Ollama, 65/65 eval queries, no crashes.
-- **All 4 Phase-3 eval targets fail on Ollama** (latest committed baseline `reports/baseline_ollama.json`: accuracy 64.6% vs ≥85%, citation precision 36.9% vs ≥90%, decline recall 70% vs ≥85%, p95 122 s vs <5 s). This is a local-model ceiling; the intended "green" run uses the Anthropic provider and has never been executed (blocked on API credits).
-- **Ollama decoding is now pinned** (temperature=0, seed=42) so eval runs are reproducible (GAPS.md #1, fixed). Baselines recorded before that fix carry a ±6–10 pp noise floor and aren't comparable to post-pinning runs.
-- **The corpus is now 16 documents / 34 chunks** (GAPS.md #2, fixed 2026-07-17) — 15 original ML/DL notes added alongside the original `transformer_architecture.md` to give retrieval real distractors. This surfaced a genuine finding: the golden set's expected chunk reaches the reranker's candidate pool only 80% of the time and survives to the final top-5 only 58% of the time — retrieval difficulty that a 4-chunk corpus could never reveal. `reports/baseline_ollama.json` still reflects the *old* 4-chunk corpus; no eval has been run against the expanded one yet.
+- **All 186 tests pass** (unit + integration), and **CI now enforces this on every push** (`.github/workflows/test.yml`, GitHub Actions, green). The pipeline runs end-to-end on Ollama, 65/65 eval queries, no crashes.
+- **The remediation plan (GAPS.md Phases 1/2/4) is complete** — see GAPS.md's status banner for what closed and what's still open. Nothing below should be read as "Phase 3 passing"; that's a separate, still-blocked exercise (next bullet).
+- **All 4 Phase-3 eval targets still fail on Ollama**, and are expected to keep failing on this provider: latest baseline `reports/baseline_ollama.json` (2026-07-20, post-tuning) — accuracy 70.0% vs ≥85%, citation precision 25.2% vs ≥90%, decline recall 60.0% vs ≥85%, p95 122.8 s vs <5 s. This is a local-model ceiling (see GAPS.md #13); the intended "green" run uses the Anthropic provider and has never been executed (blocked on API credits). A pre-flight `--estimate-cost` (GAPS.md #12) now exists so that run can be budget-checked before it spends anything — projected at $1.53 against the $2.00 cap.
+- **Ollama decoding is pinned** (temperature=0, seed=42) so eval runs are reproducible (GAPS.md #1, fixed). Baselines recorded before that fix carry a ±6–10 pp noise floor and aren't comparable to post-pinning runs.
+- **The corpus is 16 documents / 34 chunks** (GAPS.md #2, fixed 2026-07-17). This surfaced the retrieval-recall finding that GAPS.md #13 chased down: **the cross-encoder reranker, not retrieval breadth, is the recall ceiling.** Raising `rerank_candidates` 15→20 lifted candidate-pool recall 78%→84% and moved *nothing* downstream in a full re-run (accuracy, citation precision, decline recall, per-category accuracy all identical to ~3 decimals) — the reranker re-buries chunks regardless of pool size. A reranker bake-off found one model that actually helps (`bge-reranker-v2-m3`, final-recall 60%→71%) but at 12.9 s/query on CPU it's 2.5× the entire p95 budget on its own; not swapped. Treat any future metric movement attributed to `bm25_top_k`/`vector_top_k`/`rerank_candidates` as suspect until the reranker itself changes.
+- **Packaging was silently broken until this cycle**: no `[build-system]` in `pyproject.toml` meant `uv sync` never installed the `citesage` package itself — invisible locally because of a stale manual editable install, but fatal on a clean clone (and the first thing CI's first-ever run caught). Fixed with hatchling; verified via a clean throwaway venv install.
 
 ## Critical paths (load-bearing — change with care)
 
@@ -79,7 +81,7 @@ QUERY (LangGraph state machine — graph/pipeline.py, graph/nodes.py)
 - `config.yaml` thresholds — tiny numeric edits swing eval metrics by tens of points.
 - `evaluation/run_eval.py` metric definitions — citation precision was once mis-measured (boolean-subset averaged); the current formula matches the Phase-3 spec. Don't "simplify" it back.
 
-Safe to change casually: `ui/app.py`, `cli.py` output formatting, `scripts/compare_retrieval.py`, docs.
+Safe to change casually: `ui/app.py`, `cli.py` output formatting, `scripts/compare_retrieval.py`, `scripts/retrieval_recall.py`, docs.
 
 ## Non-obvious gotchas
 

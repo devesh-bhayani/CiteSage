@@ -2,6 +2,13 @@
 
 *Written 2026-06-15 at commit `9923c3a` after a full read. Ordered by severity. Each item ends with a fix scoped small enough for a single focused session.*
 
+**Status as of 2026-07-23: the remediation plan (Phases 1, 2, 4) is complete** (commits `9315c86`..`567adc7`, all on `master`, CI green). That closed #1, #2, #3, #5, #12, and produced the new finding #13 — it did **not** touch #4, #6, #7, #8 (partially), #9, #10, #11, which remain open below and are not blocking. "Phases done" means the plan is finished, not that the audit is clean — see each item for what's actually still outstanding:
+- **Phase 1** (hardening): #3 fixed (storage caches), #8 partially fixed (26→37 test cases), #5 fixed (CI added, and later repaired — see #10-adjacent packaging note below).
+- **Phase 2** (retrieval tuning): #2's follow-up resolved — `rerank_candidates` tuned, and #13 opened with the real finding: the cross-encoder, not the retrieval knobs, is the recall ceiling. Confirmed end-to-end with a null-result re-baseline (65/65).
+- **Phase 4** (budget guard, done *before* the funded run rather than after): #12 fixed — cost pre-flight + partial-run banner, so the first funded run won't silently truncate.
+- **"Phase 3"** is a pre-existing term in this repo (`docs/phases/PHASE3_*.md`) for the eval-target-passing exercise on the Anthropic provider, not a step in this plan — it remains blocked on API credits and was not attempted this cycle.
+- **Bonus, not planned:** CI's first-ever run failed (`ModuleNotFoundError: No module named 'citesage'` — no `[build-system]` in `pyproject.toml`, so `uv sync` never installed the project). Fixed same session (`44f261a`); confirmed green on the next push.
+
 ---
 
 ## 1. ~~Eval is non-deterministic~~ — FIXED 2026-06-15
